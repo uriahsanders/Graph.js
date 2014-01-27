@@ -13,8 +13,10 @@ var Graph = Graph || (function($) {
 	var Private = {};
 	Private.count = 0;
 	var Graph = function(obj) {
-		Private.setOptions.call(this, obj);
-		++Private.count;
+		if (obj !== 0) {
+			Private.setOptions.call(this, obj);
+			++Private.count;
+		}
 	};
 	Private.defaults = function() {
 		return {
@@ -37,7 +39,7 @@ var Graph = Graph || (function($) {
 		Private.attachTo = Private.attachTo || 'body';
 		var containerHeight = $(Private.attachTo).css('height');
 		var containerWidth = $(Private.attachTo).css('width');
-		//if its a percentage they probably mean fill the graph, so use it
+		//if its a percentage they probably mean fill the container, so use it
 		height = (height.substring(height.length - 1) === '%') ? containerHeight : height;
 		width = (width.substring(width.length - 1) === '%') ? containerWidth : width;
 		return {
@@ -73,6 +75,8 @@ var Graph = Graph || (function($) {
 			noLines: false,
 			pointRadius: 5,
 			pieSize: 200,
+			tooltipWidth: 50,
+			rx: 10, //tooltip roundedness
 			//add some html before append
 			before: '',
 			//after append:
@@ -101,15 +105,16 @@ var Graph = Graph || (function($) {
 		}
 		return selector;
 	};
-	Private.styles = function(obj) {
+	Private.design = function(obj) {
 		//first way to style is by creating an object representing the CSS
 		obj.byCSS = obj.byCSS || {};
-		//second way to style something is by modifying default styles
-		obj.styles = obj.styles || {};
+		//second way to style something is by modifying default design
+		obj.design = obj.design || {};
 		var xAnchor = (obj.type === 'bar') ? 'start' : 'middle';
 		//which replaces defaults below
 		var height = obj.height || '100%';
 		var width = obj.width || '100%';
+		var self = obj.design;
 		var styling = {};
 		styling.style = {};
 		styling.style[this.parseS(obj.id, '')] = {
@@ -117,68 +122,67 @@ var Graph = Graph || (function($) {
 			"width": width
 		};
 		styling.style[this.parseS(obj.id, '.grid')] = {
-			"stroke": obj.styles.gridStroke || "#000",
-			"stroke-width": obj.styles.gridStrokeWidth || "1"
+			"stroke": self.gridColor || "#000",
+			"stroke-width": self.gridWidth || "1"
 		};
 		styling.style[this.parseS(obj.id, '.points')] = {
-			"stroke": obj.styles.pointStroke || "grey",
-			"stroke-width": obj.styles.strokeWidth || "4",
+			"stroke": self.pointColor || "grey",
+			"stroke-width": self.pointWidth || "4",
 			"cursor": 'pointer'
 		};
 		styling.style[this.parseS(obj.id, 'circle')] = {
 			"opacity": 0.7
 		};
 		styling.style[this.parseS(obj.id, '.inset')] = {
-			"fill": obj.styles.pointFill || "lightblue"
+			"fill": self.pointFill || "lightblue"
 		};
 		styling.style[this.parseS(obj.id, '.labels')] = {
-			"fill": obj.styles.labelFill || "#000",
-			"stroke": obj.styles.labelStroke || "none",
-			"font-family": obj.styles.labelFont || "Arial",
-			"font-size": obj.styles.labelFontSize || "12px",
-			"kerning": obj.styles.labelKerning || "2"
+			"fill": self.labelColor || "#000",
+			"stroke": self.labelStroke || "none",
+			"font-family": self.labelFont || "Arial",
+			"font-size": self.labelFontSize || "12px",
+			"kerning": self.labelKerning || "2"
 		};
 		styling.style[this.parseS(obj.id, '.lines')] = {
-			"stroke": obj.styles.lineStroke || "darkgrey",
-			"stroke-width": obj.styles.lineStokeWidth || "2"
+			"stroke": self.lineColor || "darkgrey",
+			"stroke-width": self.lineWidth || "2"
 		};
 		styling.style[this.parseS(obj.id, '.line-of-1')] = {
-			"stroke": obj.styles.lineStroke || "green",
-			"stroke-width": obj.styles.lineStokeWidth || "2"
+			"stroke": self.lineColor || "green",
+			"stroke-width": self.lineWidth || "2"
 		};
 		styling.style[this.parseS(obj.id, '.rect')] = {
-			"stroke": obj.styles.lineStroke || "grey",
-			"stroke-width": obj.styles.lineStokeWidth || "2",
-			'fill': 'blue',
+			"stroke": self.lineColor || "grey",
+			"stroke-width": self.lineWidth || "2",
+			'fill': self.barColor || 'blue',
 			'opacity': 0.7
 		};
 		styling.style[this.parseS(obj.id, '.SVG-tooltip')] = {
-			"fill": obj.styles.tooltipFill || "#000",
-			"stroke": obj.styles.tooltipStroke || "none",
-			"font-family": obj.styles.tooltipFont || "Arial",
-			"font-size": obj.styles.tooltipFontSize || "12px",
+			"fill": self.tooltipColor || "#000",
+			"stroke": self.tooltipStroke || "none",
+			"font-family": self.tooltipFont || "Arial",
+			"font-size": self.tooltipFontSize || "12px",
 			"display": 'none',
 			"opacity": '1'
 		};
 		styling.style[this.parseS(obj.id, '.SVG-tooltip-box')] = {
 			"display": 'none',
-			"opacity": "0.7",
-			"fill": 'blue',
-			"stroke": obj.styles.lineStroke || "grey",
-			"stroke-width": obj.styles.lineStokeWidth || "2"
+			"fill": self.tooltipBoxColor || "none",
+			"stroke": self.lineColor || "none",
+			"stroke-width": self.lineWidth || "2"
 		};
 		styling.style[this.parseS(obj.id, '.area')] = {
 			"opacity": "0.5",
-			"fill": 'blue'
+			"fill": self.areaColor || 'none'
 		};
 		styling.style[this.parseS(obj.id, '.slice')] = {
 			"opacity": "0.7"
 		};
 		styling.style[this.parseS(obj.id, '.labels.x-labels')] = {
-			"text-anchor": obj.styles.xLabelAnchor || xAnchor
+			"text-anchor": self.xLabelAnchor || xAnchor
 		};
 		styling.style[this.parseS(obj.id, '.labels.y-labels')] = {
-			"text-anchor": obj.styles.yLabelAnchor || "end"
+			"text-anchor": self.yLabelAnchor || "end"
 		};
 		styling.style['table[id="' + obj.id + '"]'] = {
 			"height": height,
@@ -187,12 +191,12 @@ var Graph = Graph || (function($) {
 			"text-align": 'center'
 		};
 		//when using multiple lines make them different colors automatically
-		var colors = obj.colors || ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'brown'];
+		var colors = obj.colors || ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'brown', 'black', 'grey'];
 		if (obj.colors) obj.colors.push(''); //so bar spaces dont takeup colors
 		for (var i = 0; i < colors.length; ++i) {
 			styling.style[this.parseS(obj.id, '.line-of-' + i)] = {
-				"stroke": obj.styles.lineStroke || colors[i],
-				"stroke-width": obj.styles.lineStokeWidth || "2"
+				"stroke": self.lineColor || colors[i],
+				"stroke-width": self.lineWidth || "2"
 			};
 			styling.style[this.parseS(obj.id, '.path-of-' + i)] = {
 				"fill": colors[i],
@@ -213,6 +217,7 @@ var Graph = Graph || (function($) {
 	//handle this.obj
 	Private.setOptions = function(obj) {
 		obj = obj || {};
+		if (obj.points && $.isArray(obj.points[0])) obj.multiplePoints = true;
 		if (obj.attachTo) {
 			obj.attachTo = (obj.attachTo.charAt(0) === '#') ? obj.attachTo : '#' + obj.attachTo; //make hash optional (attchTo)
 			Private.attachTo = obj.attachTo; //for basics(), which cant access this.obj.attachTo in time
@@ -227,10 +232,10 @@ var Graph = Graph || (function($) {
 			obj.id = obj.id || this.obj.id;
 			//everything user did not specify is filled with defaults + basics + style
 			//style needs id passed in so it can be replaced from basics().id
-			$.extend(this.obj, Private.defaults(), obj, Private.styles(obj)); //ORDER MATTERS WITH $.EXTEND
+			$.extend(this.obj, Private.defaults(), obj, Private.design(obj)); //ORDER MATTERS WITH $.EXTEND
 			this.obj.addStyle = true;
 		} else if (obj && obj.addStyle === true) { //only add styling
-			$.extend(this.obj, Private.styles(obj), obj);
+			$.extend(this.obj, Private.design(obj), obj);
 		} else if (obj) {
 			this.obj = obj; //only use given args
 		}
@@ -336,11 +341,6 @@ var Graph = Graph || (function($) {
 			xLabels += '<text x="' + (i * self.xDist + self.mainOffset) + '" y="' +
 				(self.height - self.padding) + '">' + self.x[i] + '</text>';
 		}
-		//name of X-Axis:
-		// if (self.xName !== null) {
-		// 	xLabels += '<text x="' + (self.width/2 - self.mainOffset - self.padding - self.yOffset) + '" y="' +
-		// 		(self.height) + '">' + self.xName + '</text>';
-		// }
 		//yLABELS
 		for (var i = 1; i <= self.y + 1; ++i) {
 			var digit = (i * self.scale - self.scale + self.yStart); //get multiple of scale as number displayed
@@ -349,11 +349,6 @@ var Graph = Graph || (function($) {
 			yLabels += '<text x="' + x + '" y="' + ((self.height - (self.yDist * i - self.padding)) - 5) +
 				'">' + digit + '</text>';
 		}
-		//name of Y-Axis:
-		// if (self.yName !== null) {
-		// 	yLabels += '<text transform="rotate(-90)"x="' + (-self.height/2) + '" y="' + (self.yDist - self.padding) +
-		// 		'">' + self.yName + '</text>';
-		// }
 		return {
 			xLabels: xLabels,
 			yLabels: yLabels
@@ -425,9 +420,9 @@ var Graph = Graph || (function($) {
 		var x = self.legendX || (self.Gwidth - self.xDist);
 		var width = 30; //width of rect
 		var height = 30;
+		var y = self.yOffset;
 		self.dataNames = self.dataNames || [];
 		if (self.multiplePoints || self.type === 'pie') {
-			var y = self.yOffset;
 			for (var i = 0; i < self.points.length; ++i) {
 				legend += '<g id="legend-' + self.id + '"class="legend-of-' + i + '">';
 				//RECT
@@ -436,6 +431,15 @@ var Graph = Graph || (function($) {
 				//TEXT
 				legend += '<text style="cursor:default;"class="legend-of-' + i + '"x="' + (x + width + 5) +
 					'"y="' + (y + height / 2) + '">' + (self.dataNames[i] || 'Data' + (i === 0 ? '' : ' ' + i)) + '</text>';
+				legend += '</g>';
+				y += self.yDist + self.padding;
+			}
+		} else {
+			for (var i = 0; i < self.x.length; ++i) {
+				legend += '<g id="legend-' + self.id + '">';
+				//TEXT
+				legend += '<text style="cursor:default;"x="' + (1.5 * x) +
+					'"y="' + (y + height / 2) + '">' + (self.x[i] + " : " + self.points[i]) + '</text>';
 				legend += '</g>';
 				y += self.yDist + self.padding;
 			}
@@ -465,12 +469,12 @@ var GraphLinear = GraphLinear || (function($) {
 					var tooltipRect = '#' + $(thiz).attr('class') + '-tooltip-rect';
 					var s = parseFloat($(this).css('stroke-width'));
 					if (action === 'add') {
-						$(this).css('stroke-width', obj.lineStrokeWidth || 3);
+						$(this).css('stroke-width', obj.lineWidth || 3);
 						$(this).css('opacity', 1);
 						$(tooltip).show();
 						$(tooltipRect).show();
 					} else {
-						$(this).css('stroke-width', obj.lineStrokeWidth - 1 || 2);
+						$(this).css('stroke-width', obj.lineWidth - 1 || 2);
 						$(this).css('opacity', 0.7);
 						$(tooltip).hide();
 						$(tooltipRect).hide();
@@ -520,9 +524,10 @@ var GraphLinear = GraphLinear || (function($) {
 			'"cx="' + x + '" cy="' + inc + '" r="' + r + '"></circle>'; //cx is always on a vert. line
 		//TOOLTIPS
 		//rectangle
-		html += '<g><rect class="SVG-tooltip-box"id="' + self.id + '-point' +
-			str + '-tooltip-rect"rx="10"x="' + (x - self.padding * 2) + '"y="' + (inc - self.yDist - self.padding * 2) +
-			'"height="' + (self.yDist + self.padding / 2) + '"width="' + (50) + '"/>';
+
+		html += '<g><rect class="' + (self.multiplePoints ? 'rect-of-' + arr[0] + ' ' : '') + 'SVG-tooltip-box"id="' + self.id + '-point' +
+			str + '-tooltip-rect"rx="'+self.rx+'"x="' + (x - self.padding * 2 - self.tooltipWidth / 2) + '"y="' + (inc - self.yDist - self.padding * 2) +
+			'"height="' + (self.yDist + self.padding / 2) + '"width="' + (50 + self.tooltipWidth) + '"/>';
 		//text
 		html += '<text class="SVG-tooltip"id="' + self.id + '-point' + str + '-tooltip" x="' +
 			(x - self.padding) + '" y="' + (inc - self.yDist) + '">' + points + '</text></g>';
@@ -542,7 +547,7 @@ var GraphLinear = GraphLinear || (function($) {
 		var xLines = self.x.length;
 		var yLines = self.y + 1; //+1 because line 1 is at origin
 		var r = 5; //radius of circle
-		var hmdist = self.height - self.yDist;
+		var hmdist = self.height - self.yDist; //height minus distance
 		if (!self.multiplePoints) { //single line graph
 			//POINTS (INDIVIDUAL)
 			var inc, x, j;
@@ -640,7 +645,7 @@ var GraphBar = GraphBar || (function($) {
 				$(document).on('mouseover', 'svg rect', function(e) {
 					$('#' + $(this).attr('id') + '-tooltip').show();
 					$('#' + $(this).attr('id') + '-tooltip-rect').show();
-					$(this).css('opacity', 0.8);
+					$(this).css('opacity', 1);
 				});
 				$(document).on('mouseleave', 'svg rect', function(e) {
 					$('#' + $(this).attr('id') + '-tooltip').hide();
@@ -675,8 +680,8 @@ var GraphBar = GraphBar || (function($) {
 					'" width="' + self.xDist + '" height="' + (inc) + '"/>';
 				//tooltip box
 				E.rects += '<g><rect class="SVG-tooltip-box"id="' + self.id + '-point-' +
-					i + '-tooltip-rect"rx="1"x="' + (x + self.padding / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
-					'"height="' + (self.yDist + self.padding / 2) + '"width="' + (self.xDist - self.padding) + '"/>';
+					i + '-tooltip-rect"rx="'+self.rx+'"x="' + (x + self.padding / 2 - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
+					'"height="' + (self.yDist + self.padding / 2) + '"width="' + (self.xDist - self.padding + self.tooltipWidth) + '"/>';
 				//tooltip text
 				E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + i +
 					'-tooltip" x="' + (x + (self.xDist) / 2 - self.padding) + '" y="' +
@@ -716,8 +721,8 @@ var GraphBar = GraphBar || (function($) {
 							'" width="' + (xDist) + '" height="' + (inc) + '"/>';
 						//tooltip box
 						E.rects += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
-							(ref) + '-tooltip-rect"rx="1"x="' + (x) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
-							'"height="' + (self.yDist + self.padding / 2) + '"width="' + (xDist) + '"/>';
+							(ref) + '-tooltip-rect"rx="'+self.rx+'"x="' + (x - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
+							'"height="' + (self.yDist + self.padding / 2 + 10) + '"width="' + (xDist + self.tooltipWidth) + '"/>';
 						//tooltip text
 						E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (ref) +
 							'-tooltip" x="' + (x + (xDist) / 2 - self.padding) + '" y="' +
@@ -887,7 +892,7 @@ var GraphPie = GraphPie || (function($) {
 			self.dataNames = self.x.slice(0);
 			if (self.dataNames) {
 				for (var i = 0; i < self.dataNames.length; ++i) {
-					self.dataNames[i] += ' (' + Private.percent(self.points[i] / max) + ')';
+					self.dataNames[i] += ' : ' + self.points[i] + ' (' + Private.percent(self.points[i] / max) + ')';
 				}
 			}
 			this.finishGraph(0, 0, E, thing);
@@ -913,62 +918,27 @@ var GraphPie = GraphPie || (function($) {
 			types: ['linear', 'bar', 'table', 'area', 'pie']
 		};
 		var id = opts.obj.id;
-		var SVG = new Graph(); //so we can use general functions
+		var SVG = new Graph(0); //so we can use general functions
 		var graph;
-		switch (options.action) {
-			case 'save':
-				graph = new window[SVG.genToFunc(opts.start)](opts.obj);
-				return graph.save();
-				break;
-			case 'expand':
-				SVG.expand(opts.obj);
-				break;
-			case 'update':
-
-				break;
-			default: //jsut make graph
-				//if graph has multiple datasets we can not make a pie graph:
-				if (opts.obj.multiplePoints) data.types.pop();
-				var wrapper = this.attr('id') + '-wrapper';
-				this.append('<div id="' + wrapper + '"style="border:1px solid grey;padding:10px;"></div>');
-				opts.obj.attachTo = wrapper;
-				//UI
-				var buttons = (function() {
-					var btns = '';
-					for (var i = 0; i < data.types.length; ++i) {
-						btns += '<button id="' + id + '-graphify-button-' + data.types[i] + '">' +
-							data.types[i].charAt(0).toUpperCase() + data.types[i].substring(1) +
-							'</button>&emsp;';
-					}
-					return btns;
-				})();
-				if (opts.pos === 'top') $('#' + wrapper).append(buttons + '<br/><br />');
-				graph = new window[SVG.genToFunc(opts.start)](opts.obj);
-				graph.init();
-				if (opts.pos === 'bottom') this.append(buttons);
-				if (opts.options) {
-					var formID = id + 'graphify-form';
-					var checked = (opts.obj.legend) ? 'checked' : '';
-					var form = ['<div id="' + formID + '"><hr />',
-						'<input type="text"value="' + opts.obj.title + '"placeholder="Title" />&emsp;',
-						'<input type="checkbox" ' + checked + '/>Legend&emsp;',
-						'Type: <select name="" id=""><option value="">Linear</option></select>&emsp;',
-						'Grid: <select name="" id=""><option value="">Full</option></select>&emsp;',
-						'Scale: <input style="width:20px"value="10" />',
-						'<br />',
-						'X-axis: <input style="width:20px"/><input style="width:20px"/><input style="width:20px"/><input style="width:20px"/><input style="width:20px"/><input style="width:20px"/> <span style="font-weight:bold;cursor:pointer;">+ | -</span>',
-						'<br />',
-						'<button>New Dataset</button><br />',
-						'<span style="font-weight:bold;cursor:pointer;">-</span> <input type="text"placeholder="Dataset 1"style="width:75px" /> <input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /> <span style="font-weight:bold;cursor:pointer;">+ | -</span>',
-						'<br /><span style="font-weight:bold;cursor:pointer;">-</span> <input type="text"placeholder="Dataset 2"style="width:75px" /> <input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /> <span style="font-weight:bold;cursor:pointer;">+ | -</span>',
-						'<br /><span style="font-weight:bold;cursor:pointer;">-</span> <input type="text"placeholder="Dataset 3"style="width:75px" /> <input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /><input style="width:20px" /> <span style="font-weight:bold;cursor:pointer;">+ | -</span>',
-						'<br /><button id="' + id + '-graphify-update">Update</button> | <button id="' + id + '-graphify-restore">Restore</button>',
-						'</div>'
-					].join('');
-					//NOTE: also allow them to specify colors (maybe pie shadow?) allow pie graph dataNames, allow sizing options
-					$('#' + wrapper).append(form);
-				}
-		}
+		//if graph has multiple datasets we can not make a pie graph:
+		if ($.isArray(opts.obj.points[0])) data.types.pop();
+		var wrapper = this.attr('id') + '-wrapper';
+		this.append('<div id="' + wrapper + '"></div>');
+		opts.obj.attachTo = wrapper;
+		//UI
+		var buttons = (function() {
+			var btns = '';
+			for (var i = 0; i < data.types.length; ++i) {
+				btns += '<button id="' + id + '-graphify-button-' + data.types[i] + '">' +
+					data.types[i].charAt(0).toUpperCase() + data.types[i].substring(1) +
+					'</button>&emsp;';
+			}
+			return btns;
+		})();
+		if (opts.pos === 'top') $('#' + wrapper).append(buttons + '<br/><br />');
+		graph = new window[SVG.genToFunc(opts.start)](opts.obj);
+		graph.init();
+		if (opts.pos === 'bottom') this.append(buttons);
 		//click handlers
 		$(function() {
 			//changing graph type

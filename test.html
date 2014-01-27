@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Test</title>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+</head>
+<body>
+	<h1>Graph Test</h1>
+	<div id="graph"></div>
+	<br>
+	<br>
+	<br>
+	<br>
+	<br>
+	<div id="graph2"></div>
+	<br>
+	<br>
+	<br>
+	<br>
+	<br>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<script src="Graph.js"></script>
+	<script>
+		$(function(){
+			$('#graph').graphify({
+				//options: true,
+				start: 'bar',
+				obj: {
+					id: 'ggg',
+					width: 775,
+					height: 375,
+					xGrid: false,
+					legend: true,
+					title: 'My first SVG Graph!',
+					points: [
+						[0, 26, 33, 74, 12, 49, 33],
+						[32, 46, 75, 38, 62, 76, 82],
+						[12, 33, 25, 16, 87, 20, 0]
+					],
+					pointRadius: 3,
+					colors: ['red', 'orange', 'yellow'],
+					xDist: 90
+				}
+			});
+			$('#graph2').graphify({
+				start: 'pie',
+				obj: {
+					id: 'lol',
+					legend: true,
+					pieSize: 200,
+					shadow: true,
+					height: 400,
+					x: [2000, 2001, 2002, 2003, 2004, 2005, 2006],
+					points: [17, 33, 64, 22, 87, 45, 38],
+					xDist: 90,
+					scale: 12,
+					yDist: 35,
+					grid: false,
+					design: {
+						pointColor: 'green',
+						tooltipBoxColor: 'orange',
+						barColor: 'orange'
+					}
+				}
+			});
+		});
+	</script>
+</body>
+</html>
