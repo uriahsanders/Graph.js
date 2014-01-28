@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>Test</title>
+	<title>Graph.js</title>
 	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 </head>
 <body>
-	<h1>Graph Test</h1>
+	<h1>Graph.js Examples</h1>
 	<div id="graph"></div>
 	<br>
 	<br>
@@ -33,22 +33,32 @@
 					height: 375,
 					xGrid: false,
 					legend: true,
-					title: 'My first SVG Graph!',
+					//showPoints: false,
+					title: 'Graph.js Example',
 					points: [
 						[0, 26, 33, 74, 12, 49, 33],
-						[32, 46, 75, 38, 62, 76, 82],
-						[12, 33, 25, 16, 87, 20, 0]
+						[32, 46, 75, 38, 62, 20, 52]
 					],
 					pointRadius: 3,
-					colors: ['red', 'orange', 'yellow'],
-					xDist: 90
+					colors: ['blue', 'red'],
+					xDist: 90,
+					dataNames: ['Linux', 'Mac'],
+					xName: 'Day',
+					tooltipWidth: 15,
+					design: {
+						tooltipColor: '#fff',
+						gridColor: 'grey',
+						lineStrokeColor: 'grey',
+					}
 				}
 			});
 			$('#graph2').graphify({
 				start: 'pie',
 				obj: {
 					id: 'lol',
-					legend: true,
+					legend: false,
+					width: 775,
+					legendX: 450,
 					pieSize: 200,
 					shadow: true,
 					height: 400,
@@ -58,10 +68,14 @@
 					scale: 12,
 					yDist: 35,
 					grid: false,
+					xName: 'Year',
+					dataNames: ['Amount'],
 					design: {
+						lineColor: 'green',
 						pointColor: 'green',
-						tooltipBoxColor: 'orange',
-						barColor: 'orange'
+						tooltipFontSize: '20px',
+						barColor: 'green',
+						areaColor: 'green'
 					}
 				}
 			});
