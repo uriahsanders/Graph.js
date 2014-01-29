@@ -1,13 +1,3 @@
-//Module for creating SVG graphs quickly and easily (HIGHLY flexible, everything is optional/changeable)
-/*
-	See example page: index.html
-	--------------------------------------
-	Coming soon: (* denotes current focus)
-	scatter graphs,
-	x/y axis names,
-	finish plugin, *
-	average lines for bar and scatter graphs,
-*/
 var Graph = Graph || (function($) {
 	"use strict";
 	var Private = {};
@@ -549,7 +539,7 @@ var GraphLinear = GraphLinear || (function($) {
 		E.lines = '<g class="lines">'; //connecting points
 		E.points = '<g class="inset points">';
 		var area = self.special === 'area';
-		if (area && !self.multiplePoints) E.path = '<g class="area"><path id="' + self.id + '-0-path"class="area"d="';
+		if (area && !self.multiplePoints) E.path = '<g class="area"><path id="' + self.id + '-0-path"d="';
 		//*remember: xLines are vertical, yLines are horizontal
 		var xLines = self.x.length;
 		var yLines = self.y + 1; //+1 because line 1 is at origin
@@ -757,25 +747,6 @@ var GraphBar = GraphBar || (function($) {
 				++j;
 			}
 			self.points.pop(); //remove spacing array
-			//AVERAGE LINES
-			/*var avgPts = [];
-			for (var i = 0; i < avgs.length; i += self.points.length) {
-				avgPts.push((function() {
-					var sums = 0;
-					//add up points tb then return avg.
-					for (var t = 0; t < self.points.length; ++t) {
-						sums += avgs[i + t];
-					}
-					return sums / self.points.length;
-				})());
-			}
-			//so now avgPts holds our avg points for every nth bar; lets draw line to each one from loop
-			console.log(avgPts);
-			for (var i = 0; i < avgPts.length; ++i) {
-				var j = i + 1;
-				E.points += '<line id="' + self.id + '-0-line" x1="' + (self.xOfPoints[i] + xDist + xDist/self.points.length) + '" x2="' +
-					(self.xOfPoints[j] + xDist) + '" y1="' + avgPts[i] + '" y2="' + avgPts[j] + '"></line>';
-			}*/
 		}
 		this.finishGraph(xLines, yLines, E, thing);
 	};
@@ -843,10 +814,10 @@ var GraphPie = GraphPie || (function($) {
 		if (this.obj.interactive) {
 			var thiz = this;
 			$(function() {
-				$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"]', function(e) {
+				$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
 					$(this).css('opacity', 1);
 				});
-				$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"]', function(e) {
+				$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
 					$(this).css('opacity', 0.8);
 				});
 			});
