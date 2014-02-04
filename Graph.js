@@ -390,7 +390,7 @@ var Graph = Graph || (function($) {
 		return E.SVG;
 	};
 	Graph.prototype.handleAppend = function(thing, finish) {
-		if(thing === 'update') $('#' + this.obj.id).replaceWith(finish); //replace old graph with this one
+		if (thing === 'update') $('#' + this.obj.id).replaceWith(finish); //replace old graph with this one
 		else $(this.obj.attachTo).append(finish);
 	};
 	Graph.prototype.addLegend = function(thing) {
@@ -404,13 +404,11 @@ var Graph = Graph || (function($) {
 			});
 		}
 		if (self.interactive && self.multipleDataSets) {
-			$(function() {
-				$(document).on('mouseover', 'g[id^="legend-"]', function() {
-					hoverHandle.call(this, 'add');
-				});
-				$(document).on('mouseout', 'g[id^="legend-"]', function() {
-					hoverHandle.call(this, 'take');
-				});
+			$(document).on('mouseover', 'g[id^="legend-"]', function() {
+				hoverHandle.call(this, 'add');
+			});
+			$(document).on('mouseout', 'g[id^="legend-"]', function() {
+				hoverHandle.call(this, 'take');
 			});
 		}
 		var xDist = self.xDist;
@@ -479,15 +477,13 @@ var GraphLinear = GraphLinear || (function($) {
 		//set click handlers for tooltips
 		if (this.obj.interactive) {
 			var thiz = this;
-			$(function() {
-				$(document).on('mouseover', 'svg circle[id$="point"]', function(e) {
-					pointHandle.call(this, 'add');
-					$(this).css('opacity', 1);
-				});
-				$(document).on('mouseleave', 'svg circle[id$="point"]', function(e) {
-					pointHandle.call(this, 'sub');
-					$(this).css('opacity', thiz.obj.style['svg[id="' + thiz.obj.id + '"] circle'].opacity || 0.8);
-				});
+			$(document).on('mouseover', 'svg circle[id$="point"]', function(e) {
+				pointHandle.call(this, 'add');
+				$(this).css('opacity', 1);
+			});
+			$(document).on('mouseleave', 'svg circle[id$="point"]', function(e) {
+				pointHandle.call(this, 'sub');
+				$(this).css('opacity', thiz.obj.style['svg[id="' + thiz.obj.id + '"] circle'].opacity || 0.8);
 			});
 		}
 	};
@@ -515,11 +511,11 @@ var GraphLinear = GraphLinear || (function($) {
 		num = (mult === false) ? 0 : arr[0];
 		//circles
 		html = '<circle id="' + self.id + '-' + num + '-point"class="' + self.id + '-point' + str +
-			' '+ (self.multipleDataSets ? 'point-of-' + arr[0] + ' ' : '') +'"cx="' + x + '" cy="' + inc + '" r="' + r + '"></circle>'; //cx is always on a vert. line
+			' ' + (self.multipleDataSets ? 'point-of-' + arr[0] + ' ' : '') + '"cx="' + x + '" cy="' + inc + '" r="' + r + '"></circle>'; //cx is always on a vert. line
 		//TOOLTIPS
 		//rectangle
 		html += '<g><rect class="' + (self.multipleDataSets ? 'rect-of-' + arr[0] + ' ' : '') + 'SVG-tooltip-box"id="' + self.id + '-point' +
-			str + '-tooltip-rect"rx="'+self.rx+'"x="' + (x - self.padding * 2 - self.tooltipWidth / 2) + '"y="' + (inc - self.yDist - self.padding * 2) +
+			str + '-tooltip-rect"rx="' + self.rx + '"x="' + (x - self.padding * 2 - self.tooltipWidth / 2) + '"y="' + (inc - self.yDist - self.padding * 2) +
 			'"height="' + (self.yDist + self.padding / 2) + '"width="' + (50 + self.tooltipWidth) + '"/>';
 		//text
 		html += '<text class="SVG-tooltip"id="' + self.id + '-point' + str + '-tooltip" x="' +
@@ -632,17 +628,15 @@ var GraphBar = GraphBar || (function($) {
 		//set click handlers for tooltips
 		if (this.obj.interactive) {
 			var thiz = this;
-			$(function() {
-				$(document).on('mouseover', 'svg rect', function(e) {
-					$('#' + $(this).attr('id') + '-tooltip').show();
-					$('#' + $(this).attr('id') + '-tooltip-rect').show();
-					$(this).css('opacity', 1);
-				});
-				$(document).on('mouseleave', 'svg rect', function(e) {
-					$('#' + $(this).attr('id') + '-tooltip').hide();
-					$('#' + $(this).attr('id') + '-tooltip-rect').hide();
-					$(this).css('opacity', thiz.obj.style['svg[id="' + thiz.obj.id + '"] .rect'].opacity || 0.8);
-				});
+			$(document).on('mouseover', 'svg rect', function(e) {
+				$('#' + $(this).attr('id') + '-tooltip').show();
+				$('#' + $(this).attr('id') + '-tooltip-rect').show();
+				$(this).css('opacity', 1);
+			});
+			$(document).on('mouseleave', 'svg rect', function(e) {
+				$('#' + $(this).attr('id') + '-tooltip').hide();
+				$('#' + $(this).attr('id') + '-tooltip-rect').hide();
+				$(this).css('opacity', thiz.obj.style['svg[id="' + thiz.obj.id + '"] .rect'].opacity || 0.8);
 			});
 		}
 	};
@@ -676,7 +670,7 @@ var GraphBar = GraphBar || (function($) {
 				y = (self.height - self.padding - self.yOffset - (inc));
 				//tooltip box
 				E.rects += '<g><rect class="SVG-tooltip-box"id="' + self.id + '-point-' +
-					i + '-tooltip-rect"rx="'+self.rx+'"x="' + (x + self.padding / 2 - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
+					i + '-tooltip-rect"rx="' + self.rx + '"x="' + (x + self.padding / 2 - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
 					'"height="' + (self.yDist + self.padding / 2) + '"width="' + (self.xDist - self.padding + self.tooltipWidth) + '"/>';
 				//tooltip text
 				E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + i +
@@ -684,40 +678,40 @@ var GraphBar = GraphBar || (function($) {
 					(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[i] + '</text></g>';
 			}
 		} else {
-		    //so we can loop through all the points and choose whether to do bars or tooltips in one go
-		    //this is neccesary because tooltips must be done after bars but in the exact same way
-		    //tooltips must come after so that they will be placed above all bars (SVG has no z-index)
-		    var loopThroughPoints = function(which){
-		        var j = 0;
-		        for (var i = 0; i < max; ++i) { //so we get throguh the length of every array
-    				for (var t = 0, len = numPoints; t < len; ++t) { //this lets us loop array td instead of lr with j
-    					if (t !== npm1) { //skip over spaces array
-    						all = t + j + (i * (npm1));
-    						ref = t + j + i * 2;
-    						inc = (self.points[t][j] !== 0) ? ((self.points[t][j] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;
-    						x = ((all) * (xDist) + self.mainOffset);
-    						self.xOfPoints.push(x);
-    						y = (self.height - self.padding - self.yOffset - (inc));
-    						//bars
-        					if(which === 0){
-            					E.rects += '<rect class="rect-of-' + t + ' bar"id="' + self.id + '-point-' + (ref) + '" x="' + x +
-            						'" y="' + (y - weird) +
-            						'" width="' + (xDist) + '" height="' + (inc) + '"/>';
-        					}else if(which === 1){ //tooltips
-            					//tooltip box
-            					E.rects += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
-            						(ref) + '-tooltip-rect"rx="'+self.rx+'"x="' + (x - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
-            						'"height="' + (self.yDist + self.padding / 2 + 10) + '"width="' + (xDist + self.tooltipWidth) + '"/>';
-            					//tooltip text
-            					E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (ref) +
-            						'-tooltip" x="' + (x + (xDist) / 2 - self.padding) + '" y="' +
-            						(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[t][j] + '</text></g>'
-        					}
-    					}
-    				}
-    				++j;
-			    }
-		    };
+			//so we can loop through all the points and choose whether to do bars or tooltips in one go
+			//this is neccesary because tooltips must be done after bars but in the exact same way
+			//tooltips must come after so that they will be placed above all bars (SVG has no z-index)
+			var loopThroughPoints = function(which) {
+				var j = 0;
+				for (var i = 0; i < max; ++i) { //so we get throguh the length of every array
+					for (var t = 0, len = numPoints; t < len; ++t) { //this lets us loop array td instead of lr with j
+						if (t !== npm1) { //skip over spaces array
+							all = t + j + (i * (npm1));
+							ref = t + j + i * 2;
+							inc = (self.points[t][j] !== 0) ? ((self.points[t][j] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;
+							x = ((all) * (xDist) + self.mainOffset);
+							self.xOfPoints.push(x);
+							y = (self.height - self.padding - self.yOffset - (inc));
+							//bars
+							if (which === 0) {
+								E.rects += '<rect class="rect-of-' + t + ' bar"id="' + self.id + '-point-' + (ref) + '" x="' + x +
+									'" y="' + (y - weird) +
+									'" width="' + (xDist) + '" height="' + (inc) + '"/>';
+							} else if (which === 1) { //tooltips
+								//tooltip box
+								E.rects += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
+									(ref) + '-tooltip-rect"rx="' + self.rx + '"x="' + (x - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
+									'"height="' + (self.yDist + self.padding / 2 + 10) + '"width="' + (xDist + self.tooltipWidth) + '"/>';
+								//tooltip text
+								E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (ref) +
+									'-tooltip" x="' + (x + (xDist) / 2 - self.padding) + '" y="' +
+									(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[t][j] + '</text></g>'
+							}
+						}
+					}
+					++j;
+				}
+			};
 			E.points += '<g class="lines">';
 			//okay, so we need to get the first point of each array
 			//then display them side by side and so on
@@ -767,7 +761,7 @@ var GraphTable = GraphTable || (function($) {
 				if (i < self.numPoints - 1) headers += '<th>' + self.dataNames[i + 1] + '</th>'; //add headers numerically
 				tds = '';
 				for (var t = 0, len2 = self.numPoints; t < len2; ++t) {
-					tds += '<td>'+self.points[t][i]+'</td>';
+					tds += '<td>' + self.points[t][i] + '</td>';
 				}
 				row += '<td>' + i + '</td><td>' + self.x[i] + '</td>' + tds + '</tr><tr>';
 			}
@@ -788,13 +782,11 @@ var GraphPie = GraphPie || (function($) {
 		Graph.call(this, obj);
 		if (this.obj.interactive) {
 			var thiz = this;
-			$(function() {
-				$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
-					$(this).css('opacity', 1);
-				});
-				$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
-					$(this).css('opacity', 0.8);
-				});
+			$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
+				$(this).css('opacity', 1);
+			});
+			$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
+				$(this).css('opacity', 0.8);
 			});
 		}
 	};
@@ -902,28 +894,25 @@ var GraphPie = GraphPie || (function($) {
 			return btns;
 		})();
 		if (opts.pos === 'top') $('#' + wrapper).append(buttons + '<br/><br />');
-		if(opts.start !== 'area') graph = new window[SVG.genToFunc(opts.start)](self);
-		else{
+		if (opts.start !== 'area') graph = new window[SVG.genToFunc(opts.start)](self);
+		else {
 			self.special = 'area';
 			graph = new GraphLinear(self);
 		}
 		graph.init();
 		if (opts.pos === 'bottom') this.append(buttons);
 		//click handlers
-		$(function() {
-			//changing graph type
-			$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
-				var type = $(this).attr('id').split('-')[3];
-				if (type !== 'area'){
-					self.special = false;
-					graph.to(type, self);
-				}
-				else { //area graphs are a subset of linear graphs...
-					self.special = 'area';
-					graph.to('linear', self);
-				}
-				self.type = type;
-			});
+		//changing graph type
+		$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
+			var type = $(this).attr('id').split('-')[3];
+			if (type !== 'area') {
+				self.special = false;
+				graph.to(type, self);
+			} else { //area graphs are a subset of linear graphs...
+				self.special = 'area';
+				graph.to('linear', self);
+			}
+			self.type = type;
 		});
 	};
 })(jQuery);
