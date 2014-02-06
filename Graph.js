@@ -120,7 +120,7 @@ var Graph = Graph || (function($) {
 		styling.style[this.parseS(obj.id, '.points')] = {
 			"cursor": 'pointer'
 		};
-		styling.style[this.parseS(obj.id, 'circle')] = {
+		styling.style[this.parseS(obj.id, 'circle:not(".middle")')] = {
 			"opacity": 0.8
 		};
 		styling.style[this.parseS(obj.id, '.inset')] = {
@@ -172,6 +172,9 @@ var Graph = Graph || (function($) {
 		styling.style[this.parseS(obj.id, '.area')] = {
 			"fill": self.areaColor || 'none',
 			"opacity": 0.8
+		};
+		styling.style[this.parseS(obj.id, '.middle')] = {
+			"fill": self.donutCenterColor || '#fff',
 		};
 		styling.style[this.parseS(obj.id, '.slice')] = {
 			"stroke": self.borderColor || "#fff",
@@ -710,7 +713,6 @@ var GraphBar = GraphBar || (function($) {
 					(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[i] + '</text></g>';
 			}
 		} else {
-			E.points += '<g class="lines">';
 			//okay, so we need to get the first point of each array
 			//then display them side by side and so on
 			//add spaces between data sets
@@ -899,6 +901,8 @@ var GraphPie = GraphPie || (function($) {
 					')"id="' + self.id + '-point-' + i + '"class="path-of-' + i +
 					' slice" d="' + CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT + 'Z"/>';
 			}
+			if (self.special === 'donut')
+				E.middle = '<g><circle class="middle"cx="' + center + '" cy="' + center + '" r="' + (self.donutCenterRadius || center / 2) + '"/>';
 			//add percentages to names for legend
 			self.dataNames = self.x.slice(0);
 			if (self.dataNames) {
@@ -930,11 +934,12 @@ var GraphPie = GraphPie || (function($) {
 		var id = self.id;
 		var SVG = new Graph(0); //so we can use general functions
 		var graph;
+		//var specials = ['area', 'combo', 'donut']; //subsets of major graphs
 		//if graph has multiple datasets we can not make a pie graph or combo graph:
 		if ($.isArray(self.points[0])) {
 			types = ['linear', 'area', 'bar', 'combo', 'table'];
 		} else {
-			types = ['linear', 'area', 'bar', 'table', 'pie'];
+			types = ['linear', 'area', 'bar', 'table', 'pie', 'donut'];
 		}
 		var wrapper = this.attr('id') + '-wrapper';
 		this.append('<div id="' + wrapper + '"></div>');
@@ -951,14 +956,19 @@ var GraphPie = GraphPie || (function($) {
 		})();
 		if (opts.pos === 'top') $('#' + wrapper).append(buttons + '<br/><br />');
 		var start = opts.start;
-		if (start !== 'area' && start !== 'combo') graph = new window[SVG.genToFunc(start)](self);
+		if (start !== 'area' && start !== 'combo' && start !== 'donut') graph = new window[SVG.genToFunc(start)](self);
 		else {
-			if (start === 'area') {
-				self.special = 'area';
-				graph = new GraphLinear(self);
-			} else if (start === 'combo') {
-				self.special = 'combo';
-				graph = new GraphBar(self);
+			self.special = start;
+			switch (start) {
+				case 'area':
+					graph = new GraphLinear(self);
+					break;
+				case 'combo':
+					graph = new GraphBar(self);
+					break;
+				case 'donut':
+					graph = new GraphPie(self);
+					break;
 			}
 		}
 		graph.init();
@@ -967,18 +977,22 @@ var GraphPie = GraphPie || (function($) {
 		//changing graph type
 		$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
 			var type = $(this).attr('id').split('-')[3];
-			if (type !== 'area' && type !== 'combo') {
+			if (type !== 'area' && type !== 'combo' && type !== 'donut') {
 				//console.log('hi');
 				self.special = false;
 				graph.to(type, self);
-			} else { //area graphs are a subset of linear graphs, combo of bar graphs...
-				if (type === 'area') {
-					self.special = 'area';
-					graph.to('linear', self);
-				} else if (type === 'combo') {
-					console.log('hi');
-					self.special = 'combo';
-					graph.to('bar', self);
+			} else { //area graphs are a subset of linear graphs, combo of bar graphs...so on
+				self.special = type;
+				switch (type) {
+					case 'area':
+						graph.to('linear', self);
+						break;
+					case 'combo':
+						graph.to('bar', self);
+						break;
+					case 'donut':
+						graph.to('pie', self);
+						break;
 				}
 			}
 			self.type = type;
