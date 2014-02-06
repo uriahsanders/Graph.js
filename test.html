@@ -28,7 +28,7 @@
 		$(function(){
 			$('#graph').graphify({
 				//options: true,
-				start: 'bar',
+				start: 'combo',
 				obj: {
 					id: 'ggg',
 					width: 775,
@@ -46,9 +46,13 @@
 					dataNames: ['Linux', 'Mac'],
 					xName: 'Day',
 					tooltipWidth: 15,
+					averagePointRadius: 10,
 					design: {
 						tooltipColor: '#fff',
 						gridColor: 'grey',
+						tooltipBoxColor: 'green',
+						averageLineColor: 'green',
+						pointColor: 'green',
 						lineStrokeColor: 'grey',
 					}
 				}

@@ -64,6 +64,7 @@ var Graph = Graph || (function($) {
 			showPoints: true,
 			noLines: false,
 			pointRadius: 5,
+			averagePointRadius: 5,
 			pieSize: 200,
 			tooltipWidth: 50,
 			pieLegend: true,
@@ -136,6 +137,11 @@ var Graph = Graph || (function($) {
 			"stroke": self.lineColor || "darkgrey",
 			"stroke-width": self.lineWidth || "2"
 		};
+		styling.style[this.parseS(obj.id, '.averageLine')] = {
+			"stroke": self.averageLineColor || "darkgrey",
+			"fill": self.averageLineColor || "darkgrey",
+			"stroke-width": self.lineWidth || "2"
+		};
 		styling.style[this.parseS(obj.id, '.line-of-1')] = {
 			"stroke": self.lineColor || "green",
 			"stroke-width": self.lineWidth || "2"
@@ -187,7 +193,7 @@ var Graph = Graph || (function($) {
 		//when using multiple lines make them different colors automatically
 		var colors = obj.colors || ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'brown', 'gold', 'black', 'grey'];
 		colors.push(''); //so bar spaces dont takeup colors
-		for (var i = 0; i < colors.length; ++i) {
+		for (var i = 0, len = colors.length; i < len; ++i) {
 			styling.style[this.parseS(obj.id, '.line-of-' + i)] = {
 				"stroke": self.lineColor || colors[i],
 				"stroke-width": self.lineWidth || "2"
@@ -427,7 +433,6 @@ var Graph = Graph || (function($) {
 				//TEXT
 				legend += '<text style="cursor:default;"class="legend-of-' + i + '"x="' + (x + width + 5) +
 					'"y="' + (y + height / 2) + '">' + (self.dataNames[i] || 'Data' + (i === 0 ? '' : ' ' + i)) + '</text>';
-				legend += '</g>';
 				y += self.yDist + self.padding;
 			}
 		} else {
@@ -436,10 +441,20 @@ var Graph = Graph || (function($) {
 				//TEXT
 				legend += '<text style="cursor:default;"x="' + (1.5 * x) +
 					'"y="' + (y + height / 2) + '">' + (self.x[i] + " : " + self.points[i]) + '</text>';
-				legend += '</g>';
 				y += self.yDist + self.padding;
 			}
 		}
+		if (self.special === 'combo') {
+			var j = i + 1;
+			legend += '<g id="legend-avg-' + self.id + '">';
+			//RECT
+			legend += '<rect class="averageLine"x="' + (x) +
+				'" y="' + (y) + '"width="' + width + '"height="' + height + '"></rect>';
+			//TEXT
+			legend += '<text style="cursor:default;"x="' + (x + width + 5) +
+				'"y="' + (y + height / 2) + '">' + 'Average' + '</text>';
+		}
+		legend += '</g>';
 		return legend;
 	};
 	return Graph;
@@ -477,11 +492,11 @@ var GraphLinear = GraphLinear || (function($) {
 		//set click handlers for tooltips
 		if (this.obj.interactive) {
 			var thiz = this;
-			$(document).on('mouseover', 'svg circle[id$="point"]', function(e) {
+			$(document).on('mouseover', 'svg circle[id$="point"]', function() {
 				pointHandle.call(this, 'add');
 				$(this).css('opacity', 1);
 			});
-			$(document).on('mouseleave', 'svg circle[id$="point"]', function(e) {
+			$(document).on('mouseleave', 'svg circle[id$="point"]', function() {
 				pointHandle.call(this, 'sub');
 				$(this).css('opacity', thiz.obj.style['svg[id="' + thiz.obj.id + '"] circle'].opacity || 0.8);
 			});
@@ -489,32 +504,34 @@ var GraphLinear = GraphLinear || (function($) {
 	};
 	GraphLinear.prototype = Object.create(Graph.prototype);
 	GraphLinear.prototype.constructor = GraphLinear;
-	GraphLinear.prototype.buildPoints = function(arr) {
-		var inc, x, j, points, str, html, mult, num, i, r = this.obj.pointRadius,
+	GraphLinear.prototype.buildPoints = function(arr, pts) {
+		var inc, x, j, points, str, html, mult, num, i, r = (pts) ? this.obj.averagePointRadius : this.obj.pointRadius,
 			self = this.obj;
+		var finalPoints = pts || self.points;
 		//stuff that changes based on multiple points:
 		if (arr.length === 1) {
 			//only have "i" var
-			points = self.points[arr[0]];
+			points = finalPoints[arr[0]];
 			str = arr[0];
 			i = arr[0];
 			mult = false;
 		} else if (arr.length === 2) {
 			//have "i" and then "t" var
-			points = self.points[arr[0]][arr[1]];
+			points = finalPoints[arr[0]][arr[1]];
 			str = '' + arr[0] + arr[1]; //to get proper identifier
 			i = arr[1];
 			mult = true;
 		}
 		inc = self.height - ((points + self.scale) * (self.yDist / self.scale)); //subtract from height to invert graph
 		x = i * self.xDist + self.mainOffset;
+		if (pts) x += self.xDist / (self.points.length + 1); //center avg lines amongst dataset bars
 		num = (mult === false) ? 0 : arr[0];
 		//circles
 		html = '<circle id="' + self.id + '-' + num + '-point"class="' + self.id + '-point' + str +
-			' ' + (self.multipleDataSets ? 'point-of-' + arr[0] + ' ' : '') + '"cx="' + x + '" cy="' + inc + '" r="' + r + '"></circle>'; //cx is always on a vert. line
+			' ' + (self.multipleDataSets && !pts ? 'point-of-' + arr[0] + ' ' : '') + '"cx="' + x + '" cy="' + inc + '" r="' + r + '"></circle>'; //cx is always on a vert. line
 		//TOOLTIPS
 		//rectangle
-		html += '<g><rect class="' + (self.multipleDataSets ? 'rect-of-' + arr[0] + ' ' : '') + 'SVG-tooltip-box"id="' + self.id + '-point' +
+		html += '<g><rect class="' + (self.multipleDataSets && !pts ? 'rect-of-' + arr[0] + ' ' : '') + 'SVG-tooltip-box"id="' + self.id + '-point' +
 			str + '-tooltip-rect"rx="' + self.rx + '"x="' + (x - self.padding * 2 - self.tooltipWidth / 2) + '"y="' + (inc - self.yDist - self.padding * 2) +
 			'"height="' + (self.yDist + self.padding / 2) + '"width="' + (50 + self.tooltipWidth) + '"/>';
 		//text
@@ -621,6 +638,7 @@ var GraphLinear = GraphLinear || (function($) {
 	return GraphLinear;
 })(jQuery);
 var GraphBar = GraphBar || (function($) {
+	var Private = {};
 	var GraphBar = function(obj) {
 		obj = obj || {};
 		obj.type = 'bar';
@@ -628,12 +646,12 @@ var GraphBar = GraphBar || (function($) {
 		//set click handlers for tooltips
 		if (this.obj.interactive) {
 			var thiz = this;
-			$(document).on('mouseover', 'svg rect', function(e) {
+			$(document).on('mouseover', 'svg rect', function() {
 				$('#' + $(this).attr('id') + '-tooltip').show();
 				$('#' + $(this).attr('id') + '-tooltip-rect').show();
 				$(this).css('opacity', 1);
 			});
-			$(document).on('mouseleave', 'svg rect', function(e) {
+			$(document).on('mouseleave', 'svg rect', function() {
 				$('#' + $(this).attr('id') + '-tooltip').hide();
 				$('#' + $(this).attr('id') + '-tooltip-rect').hide();
 				$(this).css('opacity', thiz.obj.style['svg[id="' + thiz.obj.id + '"] .rect'].opacity || 0.8);
@@ -642,6 +660,20 @@ var GraphBar = GraphBar || (function($) {
 	};
 	GraphBar.prototype = Object.create(Graph.prototype);
 	GraphBar.prototype.constructor = GraphBar;
+	Private.getAveragePoints = function(points) {
+		var ret = [];
+		var avg;
+		var j = 0;
+		for (var i = 0, len = points[0].length; i < len; ++i) {
+			avg = 0;
+			for (var t = 0, len2 = points.length; t < len2; ++t) { //this lets us loop array td instead of lr with j
+				avg += points[t][j];
+			}
+			ret.push(avg / len2); //average of points in the same index
+			++j;
+		}
+		return ret;
+	};
 	GraphBar.prototype.init = function(thing) {
 		var self = this.obj;
 		self.width = self.Gwidth;
@@ -678,19 +710,32 @@ var GraphBar = GraphBar || (function($) {
 					(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[i] + '</text></g>';
 			}
 		} else {
+			E.points += '<g class="lines">';
+			//okay, so we need to get the first point of each array
+			//then display them side by side and so on
+			//add spaces between data sets
+			var spaces = [];
+			for (var i = 0, len = self.points[0].length; i < len; ++i) {
+				spaces.push(0);
+			}
+			self.points.push(spaces);
+			var numPoints = self.points.length;
+			var npm1 = numPoints - 1; //reducing calcs
+			var xDist = self.xDist / numPoints;
+			var all;
+			var ref;
 			//so we can loop through all the points and choose whether to do bars or tooltips in one go
 			//this is neccesary because tooltips must be done after bars but in the exact same way
 			//tooltips must come after so that they will be placed above all bars (SVG has no z-index)
 			var loopThroughPoints = function(which) {
 				var j = 0;
-				for (var i = 0; i < max; ++i) { //so we get throguh the length of every array
+				for (var i = 0, max = self.points[0].length; i < max; ++i) { //so we get throguh the length of every array
 					for (var t = 0, len = numPoints; t < len; ++t) { //this lets us loop array td instead of lr with j
 						if (t !== npm1) { //skip over spaces array
 							all = t + j + (i * (npm1));
 							ref = t + j + i * 2;
 							inc = (self.points[t][j] !== 0) ? ((self.points[t][j] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;
 							x = ((all) * (xDist) + self.mainOffset);
-							self.xOfPoints.push(x);
 							y = (self.height - self.padding - self.yOffset - (inc));
 							//bars
 							if (which === 0) {
@@ -705,34 +750,44 @@ var GraphBar = GraphBar || (function($) {
 								//tooltip text
 								E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (ref) +
 									'-tooltip" x="' + (x + (xDist) / 2 - self.padding) + '" y="' +
-									(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[t][j] + '</text></g>'
+									(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[t][j] + '</text></g>';
 							}
 						}
 					}
+					//make absolute sure too many values arent added to the array
+					if (self.xOfPoints.length < self.points[0].length) self.xOfPoints.push(x);
 					++j;
 				}
 			};
-			E.points += '<g class="lines">';
-			//okay, so we need to get the first point of each array
-			//then display them side by side and so on
-			var max = 0;
-			for (var i = 0, len = self.numPoints; i < len; ++i) { //get longest array of points:
-				if (max < self.points[i].length) max = self.points[i].length;
-			}
-			//add spaces between data sets
-			var spaces = [];
-			for (var i = 0; i < max; ++i) {
-				spaces.push(0);
-			}
-			self.points.push(spaces);
-			var numPoints = self.points.length;
-			var npm1 = numPoints - 1; //reducing calcs
-			var xDist = self.xDist / numPoints;
-			var all;
-			var ref;
 			loopThroughPoints(0);
 			loopThroughPoints(1);
 			self.points.pop(); //remove spacing array
+			if (self.special === 'combo') {
+				//AVERAGE LINES
+				var points = Private.getAveragePoints(self.points);
+				var ln = new GraphLinear(self);
+				E.lines = '<g class="lines">'; //connecting points
+				E.points = '<g class="inset points">';
+				//below is a near copy of single dataset lines
+				//POINTS (INDIVIDUAL)
+				var inc, x, j;
+				for (var i = 0; i < xLines - 1; ++i) {
+					inc = self.height - ((points[i] + self.scale) * (self.yDist / self.scale)); //subtract from height to invert graph
+					//set our x coor depending on i due to offset (first and last are special) :/;
+					x = i * self.xDist + self.mainOffset;
+					if (self.showPoints === true) {
+						E.points += ln.buildPoints([i], points);
+					}
+					//no need to push xOfPoints 'cause we did that in earlier func
+					self.yOfPoints.push(inc);
+				}
+				//LINES
+				for (var i = 0, len = points.length - 1; i < len; ++i) {
+					j = i + 1; //get next point coordinate
+					E.lines += '<line id="' + self.id + '-0-line"class="averageLine" x1="' + self.xOfPoints[i] + '" x2="' +
+						self.xOfPoints[j] + '" y1="' + self.yOfPoints[i] + '" y2="' + self.yOfPoints[j] + '"></line>';
+				}
+			}
 		}
 		this.finishGraph(xLines, yLines, E, thing);
 	};
@@ -782,10 +837,10 @@ var GraphPie = GraphPie || (function($) {
 		Graph.call(this, obj);
 		if (this.obj.interactive) {
 			var thiz = this;
-			$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
+			$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"].slice', function() {
 				$(this).css('opacity', 1);
 			});
-			$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"].slice', function(e) {
+			$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"].slice', function() {
 				$(this).css('opacity', 0.8);
 			});
 		}
@@ -810,7 +865,6 @@ var GraphPie = GraphPie || (function($) {
 			var self = this.obj;
 			var E = this.openTags();
 			E.pie = '<g class="paths">';
-			var fullPie = 2 * Math.PI; //360 deg
 			var max = 0; //sum of all points
 			var center = self.pieSize || 200;
 			var radius = center - 20; //leave padding for pie
@@ -835,7 +889,7 @@ var GraphPie = GraphPie || (function($) {
 			for (var i = 0, len = self.numPoints; i < len; ++i) {
 				if (i !== 0) LINETO = Private.lineTo(HORZ, VERT);
 				howMuchOfPie += self.points[i] / max;
-				howMuchOfPieInRadians = howMuchOfPie * fullPie;
+				howMuchOfPieInRadians = howMuchOfPie * 2 * Math.PI; //2pi = 360 deg
 				howMuchUp = Math.sin(howMuchOfPieInRadians);
 				howMuchLeft = Math.cos(howMuchOfPieInRadians);
 				HORZ = center - (radius * howMuchLeft); //x component of line
@@ -871,33 +925,41 @@ var GraphPie = GraphPie || (function($) {
 			pos: 'top',
 			obj: {} //actual obj for module
 		}, options);
-		var data = {
-			types: ['linear', 'area', 'bar', 'table', 'pie']
-		};
+		var types;
 		var self = opts.obj;
 		var id = self.id;
 		var SVG = new Graph(0); //so we can use general functions
 		var graph;
-		//if graph has multiple datasets we can not make a pie graph:
-		if ($.isArray(self.points[0])) data.types.pop();
+		//if graph has multiple datasets we can not make a pie graph or combo graph:
+		if ($.isArray(self.points[0])) {
+			types = ['linear', 'area', 'bar', 'combo', 'table'];
+		} else {
+			types = ['linear', 'area', 'bar', 'table', 'pie'];
+		}
 		var wrapper = this.attr('id') + '-wrapper';
 		this.append('<div id="' + wrapper + '"></div>');
 		self.attachTo = wrapper;
 		//UI
 		var buttons = (function() {
 			var btns = '';
-			for (var i = 0, len = data.types.length; i < len; ++i) {
-				btns += '<button id="' + id + '-graphify-button-' + data.types[i] + '">' +
-					data.types[i].charAt(0).toUpperCase() + data.types[i].substring(1) +
+			for (var i = 0, len = types.length; i < len; ++i) {
+				btns += '<button id="' + id + '-graphify-button-' + types[i] + '">' +
+					types[i].charAt(0).toUpperCase() + types[i].substring(1) +
 					'</button>&emsp;';
 			}
 			return btns;
 		})();
 		if (opts.pos === 'top') $('#' + wrapper).append(buttons + '<br/><br />');
-		if (opts.start !== 'area') graph = new window[SVG.genToFunc(opts.start)](self);
+		var start = opts.start;
+		if (start !== 'area' && start !== 'combo') graph = new window[SVG.genToFunc(start)](self);
 		else {
-			self.special = 'area';
-			graph = new GraphLinear(self);
+			if (start === 'area') {
+				self.special = 'area';
+				graph = new GraphLinear(self);
+			} else if (start === 'combo') {
+				self.special = 'combo';
+				graph = new GraphBar(self);
+			}
 		}
 		graph.init();
 		if (opts.pos === 'bottom') this.append(buttons);
@@ -905,12 +967,19 @@ var GraphPie = GraphPie || (function($) {
 		//changing graph type
 		$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
 			var type = $(this).attr('id').split('-')[3];
-			if (type !== 'area') {
+			if (type !== 'area' && type !== 'combo') {
+				//console.log('hi');
 				self.special = false;
 				graph.to(type, self);
-			} else { //area graphs are a subset of linear graphs...
-				self.special = 'area';
-				graph.to('linear', self);
+			} else { //area graphs are a subset of linear graphs, combo of bar graphs...
+				if (type === 'area') {
+					self.special = 'area';
+					graph.to('linear', self);
+				} else if (type === 'combo') {
+					console.log('hi');
+					self.special = 'combo';
+					graph.to('bar', self);
+				}
 			}
 			self.type = type;
 		});
