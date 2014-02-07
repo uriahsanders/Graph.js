@@ -130,7 +130,7 @@ var Graph = Graph || (function($) {
 			"fill": self.labelColor || "#000",
 			"stroke": self.labelStroke || "none",
 			"font-family": self.labelFont || "Arial",
-			"font-size": self.labelFontSize || "12px",
+			"font-size": self.labelFontSize || "13px",
 			"kerning": self.labelKerning || "2"
 		};
 		styling.style[this.parseS(obj.id, '.lines')] = {
@@ -159,7 +159,7 @@ var Graph = Graph || (function($) {
 		styling.style[this.parseS(obj.id, '.SVG-tooltip')] = {
 			"fill": self.tooltipColor || "#000",
 			"font-family": self.tooltipFont || "Arial",
-			"font-size": self.tooltipFontSize || "12px",
+			"font-size": self.tooltipFontSize || "13px",
 			"display": 'none',
 			"opacity": '1'
 		};
@@ -253,6 +253,7 @@ var Graph = Graph || (function($) {
 	};
 	Graph.prototype.genToFunc = function(str) {
 		//turn generic string into function name
+		str = (str === 'area') ? 'linear' : ((str === 'combo') ? 'bar' : ((str === 'donut') ? 'pie' : str));
 		return 'Graph' + str.charAt(0).toUpperCase() + str.substring(1);
 	};
 	Graph.prototype.expand = function(obj, thing) { //expand JSON into a graph (requires 'type' property of 'obj')
@@ -368,7 +369,7 @@ var Graph = Graph || (function($) {
 		var self = this.obj;
 		return '<text x="' + (self.mainOffset) + '" y="' +
 			((self.height) - yLines * (self.yDist) - self.yOffset) +
-			'">' + self.title + '</text>';
+			'"font-weight="bold">' + self.title + '</text>';
 	};
 	//close all tags, include grid & labels, append to DOM, and add styling (SVG only
 	Graph.prototype.finishGraph = function(xLines, yLines, E, thing) {
@@ -386,11 +387,11 @@ var Graph = Graph || (function($) {
 		//COMBINING DYNAMICALLY
 		E.points = E.points || '';
 		for (var i in E) {
-			if (E[i] !== E.points) { //so we can add last to increase z-index
+			if (E[i] !== E.points && E[i] !== E.tooltips) { //so we can add last to increase z-index
 				if (i !== 'SVG') E.SVG += E[i] + '</g>';
 			}
 		}
-		E.SVG += E.points + '</svg>';
+		E.SVG += E.points + E.tooltips + '</svg>';
 		//"thing" will determine where to put the new graph
 		var finish = self.before + E.SVG + self.after;
 		this.handleAppend(thing, finish);
@@ -402,7 +403,7 @@ var Graph = Graph || (function($) {
 		if (thing === 'update') $('#' + this.obj.id).replaceWith(finish); //replace old graph with this one
 		else $(this.obj.attachTo).append(finish);
 	};
-	Graph.prototype.addLegend = function(thing) {
+	Graph.prototype.addLegend = function() {
 		var self = this.obj;
 		var hoverHandle = function(what) {
 			var to = (what === 'add') ? 1 : 0.8;
@@ -411,7 +412,7 @@ var Graph = Graph || (function($) {
 			$('line' + selector + ', rect' + selector + ', path' + selector).each(function() {
 				$(this).css('opacity', to);
 			});
-		}
+		};
 		if (self.interactive && self.multipleDataSets) {
 			$(document).on('mouseover', 'g[id^="legend-"]', function() {
 				hoverHandle.call(this, 'add');
@@ -420,7 +421,6 @@ var Graph = Graph || (function($) {
 				hoverHandle.call(this, 'take');
 			});
 		}
-		var xDist = self.xDist;
 		var legend = '<g class="legend">';
 		var x = self.legendX || (self.Gwidth - self.xDist);
 		var width = 30; //width of rect
@@ -447,8 +447,8 @@ var Graph = Graph || (function($) {
 				y += self.yDist + self.padding;
 			}
 		}
+		//we'll need a section for the average line for combo graphs
 		if (self.special === 'combo') {
-			var j = i + 1;
 			legend += '<g id="legend-avg-' + self.id + '">';
 			//RECT
 			legend += '<rect class="averageLine"x="' + (x) +
@@ -477,7 +477,6 @@ var GraphLinear = GraphLinear || (function($) {
 				if ($(this).attr('id').split('-')[1] === num) {
 					var tooltip = '#' + $(thiz).attr('class').split(' ')[0] + '-tooltip';
 					var tooltipRect = '#' + $(thiz).attr('class').split(' ')[0] + '-tooltip-rect';
-					var s = parseFloat($(this).css('stroke-width'));
 					if (action === 'add') {
 						$(this).css('stroke-width', obj.lineWidth || 3);
 						$(this).css('opacity', 1);
@@ -491,7 +490,7 @@ var GraphLinear = GraphLinear || (function($) {
 					}
 				}
 			});
-		}
+		};
 		//set click handlers for tooltips
 		if (this.obj.interactive) {
 			var thiz = this;
@@ -555,11 +554,10 @@ var GraphLinear = GraphLinear || (function($) {
 		//*remember: xLines are vertical, yLines are horizontal
 		var xLines = self.x.length;
 		var yLines = self.y + 1; //+1 because line 1 is at origin
-		var r = 5; //radius of circle
 		var hmdist = self.height - self.yDist; //height minus distance
+		var inc, x, j;
 		if (!self.multipleDataSets) { //single line graph
 			//POINTS (INDIVIDUAL)
-			var inc, x, j;
 			for (var i = 0; i < xLines; ++i) {
 				inc = self.height - ((self.points[i] + self.scale) * (self.yDist / self.scale)); //subtract from height to invert graph
 				//set our x coor depending on i due to offset (first and last are special) :/;
@@ -590,8 +588,7 @@ var GraphLinear = GraphLinear || (function($) {
 				}
 				E.path += 'L' + self.xOfPoints[self.xOfPoints.length - 1] + ',' + (hmdist) + ' Z"></path>';
 			}
-		} else {
-			var inc, x, j;
+		} else { //this looks similar to the above but we're now using multi dimensional array and different vars
 			//we need to push the right # of empty arrays into the multi arrays for points
 			for (var i = 0, len = self.numPoints; i < len; ++i) {
 				self.mxOfPoints.push([]);
@@ -722,7 +719,8 @@ var GraphBar = GraphBar || (function($) {
 			}
 			self.points.push(spaces);
 			var numPoints = self.points.length;
-			var npm1 = numPoints - 1; //reducing calcs
+			var max = self.points[0].length; //amount of points we'll go through (all arrays should be same length)
+			var npm1 = numPoints - 1; //reducing calcs (num points minus 1)
 			var xDist = self.xDist / numPoints;
 			var all;
 			var ref;
@@ -731,7 +729,7 @@ var GraphBar = GraphBar || (function($) {
 			//tooltips must come after so that they will be placed above all bars (SVG has no z-index)
 			var loopThroughPoints = function(which) {
 				var j = 0;
-				for (var i = 0, max = self.points[0].length; i < max; ++i) { //so we get throguh the length of every array
+				for (var i = 0; i < max; ++i) { //so we get throguh the length of every array
 					for (var t = 0, len = numPoints; t < len; ++t) { //this lets us loop array td instead of lr with j
 						if (t !== npm1) { //skip over spaces array
 							all = t + j + (i * (npm1));
@@ -746,18 +744,18 @@ var GraphBar = GraphBar || (function($) {
 									'" width="' + (xDist) + '" height="' + (inc) + '"/>';
 							} else if (which === 1) { //tooltips
 								//tooltip box
-								E.rects += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
+								E.tooltips += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
 									(ref) + '-tooltip-rect"rx="' + self.rx + '"x="' + (x - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
 									'"height="' + (self.yDist + self.padding / 2 + 10) + '"width="' + (xDist + self.tooltipWidth) + '"/>';
 								//tooltip text
-								E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (ref) +
+								E.tooltips += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (ref) +
 									'-tooltip" x="' + (x + (xDist) / 2 - self.padding) + '" y="' +
 									(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[t][j] + '</text></g>';
 							}
 						}
 					}
 					//make absolute sure too many values arent added to the array
-					if (self.xOfPoints.length < self.points[0].length) self.xOfPoints.push(x);
+					if (self.xOfPoints.length < max) self.xOfPoints.push(x);
 					++j;
 				}
 			};
@@ -766,16 +764,14 @@ var GraphBar = GraphBar || (function($) {
 			self.points.pop(); //remove spacing array
 			if (self.special === 'combo') {
 				//AVERAGE LINES
-				var points = Private.getAveragePoints(self.points);
+				var points = Private.getAveragePoints(self.points); //our points will be the averages of each dataset
 				var ln = new GraphLinear(self);
-				E.lines = '<g class="lines">'; //connecting points
+				E.lines = '<g class="lines">';
 				E.points = '<g class="inset points">';
 				//below is a near copy of single dataset lines
 				//POINTS (INDIVIDUAL)
-				var inc, x, j;
-				for (var i = 0; i < xLines - 1; ++i) {
-					inc = self.height - ((points[i] + self.scale) * (self.yDist / self.scale)); //subtract from height to invert graph
-					//set our x coor depending on i due to offset (first and last are special) :/;
+				for (var i = 0, len = xLines - 1; i < len; ++i) {
+					inc = self.height - ((points[i] + self.scale) * (self.yDist / self.scale));
 					x = i * self.xDist + self.mainOffset;
 					if (self.showPoints === true) {
 						E.points += ln.buildPoints([i], points);
@@ -784,6 +780,7 @@ var GraphBar = GraphBar || (function($) {
 					self.yOfPoints.push(inc);
 				}
 				//LINES
+				var j;
 				for (var i = 0, len = points.length - 1; i < len; ++i) {
 					j = i + 1; //get next point coordinate
 					E.lines += '<line id="' + self.id + '-0-line"class="averageLine" x1="' + self.xOfPoints[i] + '" x2="' +
@@ -795,7 +792,7 @@ var GraphBar = GraphBar || (function($) {
 	};
 	return GraphBar;
 })(jQuery);
-var GraphTable = GraphTable || (function($) {
+var GraphTable = GraphTable || (function() {
 	var GraphTable = function(obj) {
 		obj = obj || {};
 		obj.type = 'table';
@@ -830,7 +827,7 @@ var GraphTable = GraphTable || (function($) {
 		this.applyStyling();
 	};
 	return GraphTable;
-})(jQuery);
+})();
 var GraphPie = GraphPie || (function($) {
 	var Private = {};
 	var GraphPie = function(obj) {
@@ -901,9 +898,9 @@ var GraphPie = GraphPie || (function($) {
 					')"id="' + self.id + '-point-' + i + '"class="path-of-' + i +
 					' slice" d="' + CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT + 'Z"/>';
 			}
-			if (self.special === 'donut')
+			if (self.special === 'donut') //just stick some color circle in the middle :P
 				E.middle = '<g><circle class="middle"cx="' + center + '" cy="' + center + '" r="' + (self.donutCenterRadius || center / 2) + '"/>';
-			//add percentages to names for legend
+			//add percentages to names for legend by modifying the names taken by legend func
 			self.dataNames = self.x.slice(0);
 			if (self.dataNames) {
 				for (var i = 0, len = self.dataNames.length; i < len; ++i) {
@@ -934,16 +931,18 @@ var GraphPie = GraphPie || (function($) {
 		var id = self.id;
 		var SVG = new Graph(0); //so we can use general functions
 		var graph;
+		var serializer;
+		var thisHTML = {}; //storing html for each type that has already been created to we dont have to redo stuff
 		//var specials = ['area', 'combo', 'donut']; //subsets of major graphs
 		//if graph has multiple datasets we can not make a pie graph or combo graph:
 		if ($.isArray(self.points[0])) {
 			types = ['linear', 'area', 'bar', 'combo', 'table'];
 		} else {
-			types = ['linear', 'area', 'bar', 'table', 'pie', 'donut'];
+			types = ['linear', 'area', 'bar', 'pie', 'donut', 'table'];
 		}
 		var wrapper = this.attr('id') + '-wrapper';
-		this.append('<div id="' + wrapper + '"></div>');
-		self.attachTo = wrapper;
+		this.append('<div id="' + wrapper + '"><div id="'+wrapper+'-g-area"></div></div>');
+		self.attachTo = wrapper + '-g-area';
 		//UI
 		var buttons = (function() {
 			var btns = '';
@@ -954,22 +953,13 @@ var GraphPie = GraphPie || (function($) {
 			}
 			return btns;
 		})();
-		if (opts.pos === 'top') $('#' + wrapper).append(buttons + '<br/><br />');
+		if (opts.pos === 'top') $('#' + wrapper).prepend(buttons + '<br/><br />');
 		var start = opts.start;
-		if (start !== 'area' && start !== 'combo' && start !== 'donut') graph = new window[SVG.genToFunc(start)](self);
-		else {
+		if (start !== 'area' && start !== 'combo' && start !== 'donut'){
+			graph = new window[SVG.genToFunc(start)](self);
+		}else {
 			self.special = start;
-			switch (start) {
-				case 'area':
-					graph = new GraphLinear(self);
-					break;
-				case 'combo':
-					graph = new GraphBar(self);
-					break;
-				case 'donut':
-					graph = new GraphPie(self);
-					break;
-			}
+			graph = new window[SVG.genToFunc(start)](self);
 		}
 		graph.init();
 		if (opts.pos === 'bottom') this.append(buttons);
@@ -977,23 +967,30 @@ var GraphPie = GraphPie || (function($) {
 		//changing graph type
 		$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
 			var type = $(this).attr('id').split('-')[3];
-			if (type !== 'area' && type !== 'combo' && type !== 'donut') {
-				//console.log('hi');
-				self.special = false;
-				graph.to(type, self);
-			} else { //area graphs are a subset of linear graphs, combo of bar graphs...so on
-				self.special = type;
-				switch (type) {
-					case 'area':
-						graph.to('linear', self);
-						break;
-					case 'combo':
-						graph.to('bar', self);
-						break;
-					case 'donut':
-						graph.to('pie', self);
-						break;
-				}
+			//weve created this graph before
+			if(thisHTML.hasOwnProperty(type)){
+			    $('#'+wrapper+'-g-area').html(thisHTML[type]); //just stick old html into graph
+			}else{ //first time running this graph
+			    if (type !== 'area' && type !== 'combo' && type !== 'donut') {
+    				self.special = false;
+    				graph.to(type, self);
+    			} else { //area graphs are a subset of linear graphs, combo of bar graphs...so on
+    				self.special = type;
+    				switch (type) {
+    					case 'area':
+    						graph.to('linear', self);
+    						break;
+    					case 'combo':
+    						graph.to('bar', self);
+    						break;
+    					case 'donut':
+    						graph.to('pie', self);
+    						break;
+    				}
+    			}
+    			//innerHTML doesnt work with SVG so use xml serializer
+    			serializer = new XMLSerializer();
+    			thisHTML[type] = serializer.serializeToString(document.getElementById(self.id)); //save graph
 			}
 			self.type = type;
 		});
