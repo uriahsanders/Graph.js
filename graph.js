@@ -120,7 +120,7 @@ var Graph = Graph || (function($) {
 		styling.style[this.parseS(obj.id, '.points')] = {
 			"cursor": 'pointer'
 		};
-		styling.style[this.parseS(obj.id, 'circle:not(".middle")')] = {
+		styling.style[this.parseS(obj.id, 'circle:not(".middle"):not(".pie-tooltip")')] = {
 			"opacity": 0.8
 		};
 		styling.style[this.parseS(obj.id, '.inset')] = {
@@ -177,8 +177,8 @@ var Graph = Graph || (function($) {
 			"fill": self.donutCenterColor || '#fff',
 		};
 		styling.style[this.parseS(obj.id, '.slice')] = {
-			"stroke": self.borderColor || "#fff",
-			"stroke-width": self.borderWidth || "1",
+			"stroke": self.borderColor || "grey",
+			"stroke-width": self.borderWidth || "2",
 			"opacity": "0.8"
 		};
 		styling.style[this.parseS(obj.id, '.labels.x-labels')] = {
@@ -835,24 +835,24 @@ var GraphPie = GraphPie || (function($) {
 		obj.type = 'pie';
 		Graph.call(this, obj);
 		if (this.obj.interactive) {
-			var thiz = this;
-			$(document).on('mouseover', 'svg path[id^="' + thiz.obj.id + '"].slice', function() {
+			var thiz = this.obj;
+			$(document).on('mouseover', 'svg path[id^="' + thiz.id + '"].slice', function() {
+				$('#' + thiz.id + ' .SVG-tooltip').hide();
+				$('#' + thiz.id + ' .SVG-tooltip-title').hide();
+				$('#' + $(this).attr('id') + '-tooltip').show();
+				$('#' + $(this).attr('id') + '-tooltip-title').show();
+				$('svg path[id^="' + thiz.id + '"].slice').css('opacity', 0.8);
+				$('svg path[id^="' + thiz.id + '"].slice').css('stroke', self.borderColor || 'grey');
 				$(this).css('opacity', 1);
+				$(this).css('stroke', '#000');
 			});
-			$(document).on('mouseleave', 'svg path[id^="' + thiz.obj.id + '"].slice', function() {
-				$(this).css('opacity', 0.8);
+			$(document).on('mouseleave', 'svg path[id^="' + thiz.id + '"].slice', function() {
+				//$(this).css('opacity', 0.8);
 			});
 		}
 	};
 	GraphPie.prototype = Object.create(Graph.prototype);
 	GraphPie.prototype.constructor = GraphPie;
-	Private.bindToolTip = function() {
-		$('svg[id="' + this.obj.id + '"]').tooltip({
-			show: {
-				delay: 250
-			}
-		});
-	};
 	Private.lineTo = function(x, y) {
 		return 'L' + x + ',' + y;
 	};
@@ -878,7 +878,9 @@ var GraphPie = GraphPie || (function($) {
 			var howMuchOfPieInRadians;
 			var howMuchUp;
 			var howMuchLeft;
-			if (self.shadow) {
+			self.dataNames = self.x.slice(0);
+			var tooltipCenter = center - center / 4;
+			if (self.shadow && self.special !== 'donut') {
 				E.pie += '<defs><filter id="dropshadow" width="120%" height="120%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
 					'<circle cx="' + (center + 5) + '" cy="' + (center + 5) + '" r="' + radius + '"style="fill: black; fill-opacity:0.6; stroke:none;filter:url(#dropshadow)"/>';
 			}
@@ -898,17 +900,30 @@ var GraphPie = GraphPie || (function($) {
 					')"id="' + self.id + '-point-' + i + '"class="path-of-' + i +
 					' slice" d="' + CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT + 'Z"/>';
 			}
+			//tooltip box
+			E.tooltips += '<g><circle class="pie-tooltip"id="' + self.id + '-point-' +
+				(i) + '-tooltip-rect"style="fill:' + (self.pieTooltipFill || '#fff') + ';opacity:' + (self.pieTooltipOpacity || 0.5) + '"r="' + (self.pieTooltipRadius || 60) + '"cx="' + center + '"cy="' + center +
+				'"height="' + (self.donutCenterRadius || center / 2) + '"width="' + (self.donutCenterRadius || center / 2) + '"/>';
+			//tooltips have their own loop for good old SVG z-index reasons
+			for (var i = 0; i < len; ++i) {
+				//tooltip text
+				E.tooltips += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (i) +
+					'-tooltip" x="' + (tooltipCenter + sizing / 2) + '" y="' +
+					(tooltipCenter + center / 4 + sizing) + '">' + self.points[i] + ' (' + Private.percent(self.points[i] / max) + ')</text>';
+				E.tooltips += '<text class="SVG-tooltip-title"style="display:none;font-weight:bold;font-size:30px;"id="' + self.id + '-point-' + (i) +
+					'-tooltip-title" x="' + (tooltipCenter + sizing) + '" y="' +
+					(tooltipCenter + center / 8) + '">' + self.dataNames[i] + '</text></g>';
+			}
 			if (self.special === 'donut') //just stick some color circle in the middle :P
 				E.middle = '<g><circle class="middle"cx="' + center + '" cy="' + center + '" r="' + (self.donutCenterRadius || center / 2) + '"/>';
 			//add percentages to names for legend by modifying the names taken by legend func
-			self.dataNames = self.x.slice(0);
 			if (self.dataNames) {
 				for (var i = 0, len = self.dataNames.length; i < len; ++i) {
 					self.dataNames[i] += ' : ' + self.points[i] + ' (' + Private.percent(self.points[i] / max) + ')';
 				}
 			}
 			this.finishGraph(0, 0, E, thing);
-			Private.bindToolTip.call(this);
+			$('svg path[id^="' + self.id + '"].slice').eq(2).mouseover(); //select upper slice automatically
 		}
 	};
 	return GraphPie;
@@ -941,7 +956,7 @@ var GraphPie = GraphPie || (function($) {
 			types = ['linear', 'area', 'bar', 'pie', 'donut', 'table'];
 		}
 		var wrapper = this.attr('id') + '-wrapper';
-		this.append('<div id="' + wrapper + '"><div id="'+wrapper+'-g-area"></div></div>');
+		this.append('<div id="' + wrapper + '"><div id="' + wrapper + '-g-area"></div></div>');
 		self.attachTo = wrapper + '-g-area';
 		//UI
 		var buttons = (function() {
@@ -955,9 +970,9 @@ var GraphPie = GraphPie || (function($) {
 		})();
 		if (opts.pos === 'top') $('#' + wrapper).prepend(buttons + '<br/><br />');
 		var start = opts.start;
-		if (start !== 'area' && start !== 'combo' && start !== 'donut'){
+		if (start !== 'area' && start !== 'combo' && start !== 'donut') {
 			graph = new window[SVG.genToFunc(start)](self);
-		}else {
+		} else {
 			self.special = start;
 			graph = new window[SVG.genToFunc(start)](self);
 		}
@@ -968,29 +983,29 @@ var GraphPie = GraphPie || (function($) {
 		$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
 			var type = $(this).attr('id').split('-')[3];
 			//weve created this graph before
-			if(thisHTML.hasOwnProperty(type)){
-			    $('#'+wrapper+'-g-area').html(thisHTML[type]); //just stick old html into graph
-			}else{ //first time running this graph
-			    if (type !== 'area' && type !== 'combo' && type !== 'donut') {
-    				self.special = false;
-    				graph.to(type, self);
-    			} else { //area graphs are a subset of linear graphs, combo of bar graphs...so on
-    				self.special = type;
-    				switch (type) {
-    					case 'area':
-    						graph.to('linear', self);
-    						break;
-    					case 'combo':
-    						graph.to('bar', self);
-    						break;
-    					case 'donut':
-    						graph.to('pie', self);
-    						break;
-    				}
-    			}
-    			//innerHTML doesnt work with SVG so use xml serializer
-    			serializer = new XMLSerializer();
-    			thisHTML[type] = serializer.serializeToString(document.getElementById(self.id)); //save graph
+			if (thisHTML.hasOwnProperty(type)) {
+				$('#' + wrapper + '-g-area').html(thisHTML[type]); //just stick old html into graph
+			} else { //first time running this graph
+				if (type !== 'area' && type !== 'combo' && type !== 'donut') {
+					self.special = false;
+					graph.to(type, self);
+				} else { //area graphs are a subset of linear graphs, combo of bar graphs...so on
+					self.special = type;
+					switch (type) {
+						case 'area':
+							graph.to('linear', self);
+							break;
+						case 'combo':
+							graph.to('bar', self);
+							break;
+						case 'donut':
+							graph.to('pie', self);
+							break;
+					}
+				}
+				//innerHTML doesnt work with SVG so use xml serializer
+				serializer = new XMLSerializer();
+				thisHTML[type] = serializer.serializeToString(document.getElementById(self.id)); //save graph
 			}
 			self.type = type;
 		});

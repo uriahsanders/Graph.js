@@ -1,0 +1,10 @@
+{
+	"name": "graph.js",
+	"version": "0.5.0",
+	"description": "lightweight, customizable, SVG graphing class and plugin",
+	"author": "Uriah Sanders <uriahsanders@ymail.com>",
+	"license": "MIT",
+	"dependancies": {
+		"jQuery": "latest"
+	}
+}
