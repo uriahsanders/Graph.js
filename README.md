@@ -45,10 +45,6 @@ Latest Addition:
 ---------------
 Just added animations! Check out the new examples. (they're pretty good)
 
-Latest Issue:
---------------
-Line graphs only animate twice every time. Which is weird and probably easy to fix but im on one of those 9 hour coding sprees that really aren't healthy to continue. Ill fix it tomorrow.
-
 Contributions Welcome!:
 -----------------------
 I'm pretty busy with plenty of things right now, so this repo will move forward slowly if it's just me. So please, test and report issues, contribute code, write documentation, star, fork, and all that good stuff :)

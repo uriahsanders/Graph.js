@@ -1033,7 +1033,7 @@ var GraphPie = GraphPie || (function($) {
 		$(document).on('click', 'button[id^="' + id + '-graphify-button-"]', function() {
 			var type = $(this).attr('id').split('-')[3];
 			//weve created this graph before
-			if (thisHTML.hasOwnProperty(type)) {
+			if (thisHTML.hasOwnProperty(type) && !self.animations) {
 				$('#' + wrapper + '-g-area').html(thisHTML[type]); //just stick old html into graph
 			} else { //first time running this graph
 				if (type !== 'area' && type !== 'combo' && type !== 'donut') {
