@@ -694,7 +694,7 @@ var GraphBar = GraphBar || (function($) {
 				//bars
 				E.rects += '<rect class="rect bar"id="' + self.id + '-point-' + i + '" x="' + x +
 					'" y="' + (y - weird) +
-					'" width="' + self.xDist + '" height="' + (inc) + '"/>';
+					'" width="' + self.xDist + '" height="' + inc + '"/>';
 			}
 			for (var i = 0, len = xLines - 1; i < len; ++i) {
 				inc = (self.points[i] !== 0) ? ((self.points[i] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;

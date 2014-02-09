@@ -59,7 +59,9 @@ An update function that works like it should,
 
 Documentation,
 
-Better/more examples
+Better/more examples,
+
+Client side UI for creating graphs
 
 Contact:
 --------
