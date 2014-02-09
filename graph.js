@@ -55,6 +55,8 @@ var Graph = Graph || (function($) {
 			multipleDataSets: false,
 			legend: false,
 			interactive: true,
+			animations: false,
+			barAnimationDuration: 1,
 			grid: true,
 			xGrid: true,
 			yGrid: true,
@@ -138,8 +140,7 @@ var Graph = Graph || (function($) {
 			"stroke-width": self.lineWidth || "2"
 		};
 		styling.style[this.parseS(obj.id, '.averageLine')] = {
-			"stroke": self.averageLineColor || "darkgrey",
-			"fill": self.averageLineColor || "darkgrey",
+			"stroke": self.averageLineColor || "green",
 			"stroke-width": self.lineWidth || "2"
 		};
 		styling.style[this.parseS(obj.id, '.line-of-1')] = {
@@ -451,7 +452,7 @@ var Graph = Graph || (function($) {
 		if (self.special === 'combo') {
 			legend += '<g id="legend-avg-' + self.id + '">';
 			//RECT
-			legend += '<rect class="averageLine"x="' + (x) +
+			legend += '<rect fill="'+(self.averageLineColor || 'green')+'"class="averageLine"x="' + (x) +
 				'" y="' + (y) + '"width="' + width + '"height="' + height + '"></rect>';
 			//TEXT
 			legend += '<text style="cursor:default;"x="' + (x + width + 5) +
@@ -541,13 +542,36 @@ var GraphLinear = GraphLinear || (function($) {
 			(x - self.padding) + '" y="' + (inc - self.yDist) + '">' + points + '</text></g>';
 		return html;
 	};
+	GraphLinear.prototype.animateLines = function() {
+		//much thanks to http://jakearchibald.com/2013/animated-line-drawing-svg/ !
+		var self = this.obj;
+		var path = $('path[id^=' + self.id + ']');
+		var length;
+		for (var i = 0,  len = $('path[id^=' + self.id + ']').length; i < len; ++i) {
+			length = path[i].getTotalLength();
+			// Clear any previous transition
+			path[i].style.transition = path[i].style.WebkitTransition =
+				'none';
+			// Set up the starting positions
+			path[i].style.strokeDasharray = length + ' ' + length;
+			path[i].style.strokeDashoffset = length;
+			// Trigger a layout so styles are calculated & the browser
+			// picks up the starting position before animating
+			path[i].getBoundingClientRect();
+			// Define our transition
+			path[i].style.transition = path[i].style.WebkitTransition =
+				'stroke-dashoffset 2s ease-in-out';
+			// Go!
+			path[i].style.strokeDashoffset = '0';
+		}
+	};
 	GraphLinear.prototype.init = function(thing) {
-		var self = this.obj; //shorthand from here on...
+		var self = this.obj;
 		//correct values (atm has user inputed version, whereas G... is clean)
 		self.width = self.Gwidth;
 		self.height = self.Gheight;
 		var E = this.openTags(); //elements
-		E.lines = '<g class="lines">'; //connecting points
+		if (!area) E.lines = '<g class="lines">'; //connecting points
 		E.points = '<g class="inset points">';
 		var area = self.special === 'area';
 		if (area && !self.multipleDataSets) E.path = '<g class="area"><path id="' + self.id + '-0-path"d="';
@@ -569,15 +593,25 @@ var GraphLinear = GraphLinear || (function($) {
 				self.xOfPoints.push(x);
 				self.yOfPoints.push(inc);
 			}
-			//LINES
-			for (var i = 0, len = self.numPoints - 1; i < len; ++i) {
-				j = i + 1; //get next point coordinate
-				//to connect two points: x1 = (x of first point), x2 = (x of second point),
-				//y1 = (y of first point), y2 = (y of second point)
-				E.lines += '<line id="' + self.id + '-0-line" x1="' + self.xOfPoints[i] + '" x2="' +
-					self.xOfPoints[j] + '" y1="' + self.yOfPoints[i] + '" y2="' + self.yOfPoints[j] + '"></line>';
-			}
-			if (area) {
+			//PATHS
+			if (!area) {
+				for (var i = 0, len = self.numPoints - 1; i < len; ++i) {
+					E.lines += '<path fill="none"id="' + self.id + '-0-path"d="';
+					E.lines += 'M' + self.xOfPoints[0] + ',' + (self.yOfPoints[0]) + ' '; //make sure origin is included
+					for (var i = 1; i < self.xOfPoints.length; ++i) {
+						E.lines += 'L' + self.xOfPoints[i] + ',' + self.yOfPoints[i]; //draw line to next point
+					}
+					E.lines += '"</path>';
+				}
+			} else {
+				//LINES for area graph top
+				for (var i = 0, len = self.numPoints - 1; i < len; ++i) {
+					j = i + 1; //get next point coordinate
+					//to connect two points: x1 = (x of first point), x2 = (x of second point),
+					//y1 = (y of first point), y2 = (y of second point)
+					E.lines += '<line x1="' + self.xOfPoints[i] + '" x2="' +
+						self.xOfPoints[j] + '" y1="' + self.yOfPoints[i] + '" y2="' + self.yOfPoints[j] + '"></line>';
+				}
 				//PATHS 
 				//building SVG path params
 				//handling seprately because Moveto is important
@@ -594,10 +628,11 @@ var GraphLinear = GraphLinear || (function($) {
 				self.mxOfPoints.push([]);
 				self.myOfPoints.push([]);
 			}
-			if (area) {
-				E.path = '<g class="area">';
-				var paths = [];
-			}
+			var paths = [];
+			//if (area) {
+			E.path = '<g class="area">';
+			//var paths = [];
+			//}
 			//multiple points are in a multi-dimensional array, so treat it as such with double loops
 			for (var i = 0, len = self.numPoints; i < len; ++i) {
 				//POINTS (INDIVIDUAL)
@@ -610,15 +645,23 @@ var GraphLinear = GraphLinear || (function($) {
 					self.mxOfPoints[i].push(x);
 					self.myOfPoints[i].push(inc);
 				}
-				//LINES
-				for (var t = 0, len2 = self.points[i].length - 1; t < len2; ++t) {
-					j = t + 1; //get next point coordinate
-					//number class name for different colors
-					E.lines += '<line id="' + self.id + '-' + i + '-line" class="line-of-' + i +
-						'" x1="' + self.mxOfPoints[i][t] + '" x2="' + self.mxOfPoints[i][j] +
-						'" y1="' + self.myOfPoints[i][t] + '" y2="' + self.myOfPoints[i][j] + '"></line>';
-				}
-				if (area) {
+				if (!area) {
+					//PATHS
+					paths.push('<path fill="none"id="' + self.id + '-' + i + '-path"class="line-of-' + i + '" d="');
+					paths[i] += 'M' + self.mxOfPoints[i][0] + ',' + self.myOfPoints[i][0] + ' ';
+					for (var t = 0, len2 = self.points[i].length; t < len2; ++t) {
+						paths[i] += 'L' + self.mxOfPoints[i][t] + ',' + self.myOfPoints[i][t];
+					}
+					paths[i] += '"></path>';
+				} else {
+					//LINES
+					for (var t = 0, len2 = self.points[i].length - 1; t < len2; ++t) {
+						j = t + 1; //get next point coordinate
+						//number class name for different colors
+						E.lines += '<line id="' + self.id + '-' + i + '-line" class="line-of-' + i +
+							'" x1="' + self.mxOfPoints[i][t] + '" x2="' + self.mxOfPoints[i][j] +
+							'" y1="' + self.myOfPoints[i][t] + '" y2="' + self.myOfPoints[i][j] + '"></line>';
+					}
 					//PATHS
 					paths.push('<path id="' + self.id + '-' + i + '-path"class="path-of-' + i + '" d="');
 					paths[i] += 'M' + self.mxOfPoints[i][0] + ',' + (hmdist) + ' ';
@@ -629,11 +672,12 @@ var GraphLinear = GraphLinear || (function($) {
 					paths[i] += 'L' + self.mxOfPoints[i][self.mxOfPoints[i].length - 1] + ',' + (hmdist) + ' Z"></path>';
 				}
 			}
-			if (area) {
-				E.path += paths.join('');
-			}
+			//if (area) {
+			E.path += paths.join('');
+			//}
 		}
 		this.finishGraph(xLines, yLines, E, thing); //close tags, style, and append
+		if (!area) this.animateLines();
 	};
 	return GraphLinear;
 })(jQuery);
@@ -681,7 +725,8 @@ var GraphBar = GraphBar || (function($) {
 		var xLines = self.x.length + 1; //needs one more because each x label takes entire column
 		var yLines = self.y + 1;
 		var E = this.openTags();
-		E.rects = '<g class="rects">';
+		E.rects = '<g class="rects"transform="translate(0, 40) scale(1, -1)">'; //bar graphs need to be on cartesian coords for animation
+		E.tooltips = '<g>';
 		var inc, x, y, weird; //increment
 		weird = self.yDist - 30;
 		if (!self.multipleDataSets) {
@@ -690,24 +735,24 @@ var GraphBar = GraphBar || (function($) {
 				//if i = 0, let inc = 1 so we can at least see at line at origin
 				inc = (self.points[i] !== 0) ? ((self.points[i] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;
 				x = (i * self.xDist + self.mainOffset);
-				y = (self.height - self.padding - self.yOffset - (inc));
 				//bars
 				E.rects += '<rect class="rect bar"id="' + self.id + '-point-' + i + '" x="' + x +
-					'" y="' + (y - weird) +
-					'" width="' + self.xDist + '" height="' + inc + '"/>';
+					'" y="' + (-self.height + self.yDist + self.mainOffset + self.padding / 2) +
+					'" width="' + self.xDist + '"height="' + inc + '"' + (self.animations === true ?
+						'><animate attributeName="height" from="0" to="' + inc + '" dur="' + self.barAnimationDuration + 's" fill="freeze"></animate></rect>' : '/>');
 			}
 			for (var i = 0, len = xLines - 1; i < len; ++i) {
 				inc = (self.points[i] !== 0) ? ((self.points[i] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;
 				x = (i * self.xDist + self.mainOffset);
 				y = (self.height - self.padding - self.yOffset - (inc));
 				//tooltip box
-				E.rects += '<g><rect class="SVG-tooltip-box"id="' + self.id + '-point-' +
+				E.tooltips += '<rect class="SVG-tooltip-box"id="' + self.id + '-point-' +
 					i + '-tooltip-rect"rx="' + self.rx + '"x="' + (x + self.padding / 2 - self.tooltipWidth / 2) + '"y="' + (y - weird - self.yDist - self.padding * 2) +
 					'"height="' + (self.yDist + self.padding / 2) + '"width="' + (self.xDist - self.padding + self.tooltipWidth) + '"/>';
 				//tooltip text
-				E.rects += '<text class="SVG-tooltip"id="' + self.id + '-point-' + i +
+				E.tooltips += '<text class="SVG-tooltip"id="' + self.id + '-point-' + i +
 					'-tooltip" x="' + (x + (self.xDist) / 2 - self.padding) + '" y="' +
-					(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[i] + '</text></g>';
+					(y - weird - self.yDist / 2 - self.padding) + '">' + self.points[i] + '</text>';
 			}
 		} else {
 			//okay, so we need to get the first point of each array
@@ -740,8 +785,9 @@ var GraphBar = GraphBar || (function($) {
 							//bars
 							if (which === 0) {
 								E.rects += '<rect class="rect-of-' + t + ' bar"id="' + self.id + '-point-' + (ref) + '" x="' + x +
-									'" y="' + (y - weird) +
-									'" width="' + (xDist) + '" height="' + (inc) + '"/>';
+									'" y="' + (-self.height + self.yDist + self.mainOffset + self.padding / 2) +
+									'" width="' + (xDist) + '"height="' + inc + '"' + (self.animations === true ?
+										'><animate attributeName="height" from="0" to="' + inc + '" dur="' + self.barAnimationDuration + 's" fill="freeze"></animate></rect>' : '/>');
 							} else if (which === 1) { //tooltips
 								//tooltip box
 								E.tooltips += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
@@ -782,13 +828,17 @@ var GraphBar = GraphBar || (function($) {
 				//LINES
 				var j;
 				for (var i = 0, len = points.length - 1; i < len; ++i) {
-					j = i + 1; //get next point coordinate
-					E.lines += '<line id="' + self.id + '-0-line"class="averageLine" x1="' + self.xOfPoints[i] + '" x2="' +
-						self.xOfPoints[j] + '" y1="' + self.yOfPoints[i] + '" y2="' + self.yOfPoints[j] + '"></line>';
+					E.lines += '<path class="averageLine"fill="none"id="' + self.id + '-0-path"d="';
+					E.lines += 'M' + self.xOfPoints[0] + ',' + (self.yOfPoints[0]) + ' '; //make sure origin is included
+					for (var i = 1; i < self.xOfPoints.length; ++i) {
+						E.lines += 'L' + self.xOfPoints[i] + ',' + self.yOfPoints[i]; //draw line to next point
+					}
+					E.lines += '"</path>';
 				}
 			}
 		}
 		this.finishGraph(xLines, yLines, E, thing);
+		ln.animateLines();
 	};
 	return GraphBar;
 })(jQuery);
