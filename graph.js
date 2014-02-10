@@ -56,7 +56,11 @@ var Graph = Graph || (function($) {
 			legend: false,
 			interactive: true,
 			animations: false,
-			barAnimationDuration: 1,
+			animationDuration: 1,
+			pointAnimation: true,
+			lineAnimation: true,
+			barAnimation: true,
+			pieAnimation: true,
 			grid: true,
 			xGrid: true,
 			yGrid: true,
@@ -171,6 +175,8 @@ var Graph = Graph || (function($) {
 			"stroke-width": self.borderWidth || "2",
 		};
 		styling.style[this.parseS(obj.id, '.area')] = {
+			"stroke": (!obj.multipleDataSets) ? (self.lineColor || "green") : 'none',
+			"stroke-width": self.borderWidth || "2",
 			"fill": self.areaColor || 'none',
 			"opacity": 0.8
 		};
@@ -249,7 +255,7 @@ var Graph = Graph || (function($) {
 		this.obj.numPoints = this.obj.points.length;
 		this.obj.xLength = this.obj.x.length;
 	};
-	Graph.prototype.save = function() { //save a graph as stringified JSON (can expand later)
+	Graph.prototype.getData = function() { //save a graph as stringified JSON (can expand later)
 		return JSON.stringify(this.obj);
 	};
 	Graph.prototype.genToFunc = function(str) {
@@ -452,7 +458,7 @@ var Graph = Graph || (function($) {
 		if (self.special === 'combo') {
 			legend += '<g id="legend-avg-' + self.id + '">';
 			//RECT
-			legend += '<rect fill="'+(self.averageLineColor || 'green')+'"class="averageLine"x="' + (x) +
+			legend += '<rect fill="' + (self.design.averageLineColor || 'green') + '"class="averageLine"x="' + (x) +
 				'" y="' + (y) + '"width="' + width + '"height="' + height + '"></rect>';
 			//TEXT
 			legend += '<text style="cursor:default;"x="' + (x + width + 5) +
@@ -531,7 +537,10 @@ var GraphLinear = GraphLinear || (function($) {
 		num = (mult === false) ? 0 : arr[0];
 		//circles
 		html = '<circle id="' + self.id + '-' + num + '-point"class="' + self.id + '-point' + str +
-			' ' + (self.multipleDataSets && !pts ? 'point-of-' + arr[0] + ' ' : '') + '"cx="' + x + '" cy="' + inc + '" r="' + r + '"></circle>'; //cx is always on a vert. line
+			' ' + (self.multipleDataSets && !pts ? 'point-of-' + arr[0] + ' ' : '') + '"cx="' + x + '" cy="' + inc + '" r="' + r + '">';
+		if (self.animations && self.pointAnimation && !(self.multipleDataSets && self.special === 'area'))
+			html += '<animate attributeName="cy" from="0" to="' + inc + '" dur="' + (self.animationDuration + i / 7) + 's" fill="freeze">';
+		html += '</circle>';
 		//TOOLTIPS
 		//rectangle
 		html += '<g><rect class="' + (self.multipleDataSets && !pts ? 'rect-of-' + arr[0] + ' ' : '') + 'SVG-tooltip-box"id="' + self.id + '-point' +
@@ -547,7 +556,7 @@ var GraphLinear = GraphLinear || (function($) {
 		var self = this.obj;
 		var path = $('path[id^=' + self.id + ']');
 		var length;
-		for (var i = 0,  len = $('path[id^=' + self.id + ']').length; i < len; ++i) {
+		for (var i = 0, len = $('path[id^=' + self.id + ']').length; i < len; ++i) {
 			length = path[i].getTotalLength();
 			// Clear any previous transition
 			path[i].style.transition = path[i].style.WebkitTransition =
@@ -604,14 +613,6 @@ var GraphLinear = GraphLinear || (function($) {
 					E.lines += '"</path>';
 				}
 			} else {
-				//LINES for area graph top
-				for (var i = 0, len = self.numPoints - 1; i < len; ++i) {
-					j = i + 1; //get next point coordinate
-					//to connect two points: x1 = (x of first point), x2 = (x of second point),
-					//y1 = (y of first point), y2 = (y of second point)
-					E.lines += '<line x1="' + self.xOfPoints[i] + '" x2="' +
-						self.xOfPoints[j] + '" y1="' + self.yOfPoints[i] + '" y2="' + self.yOfPoints[j] + '"></line>';
-				}
 				//PATHS 
 				//building SVG path params
 				//handling seprately because Moveto is important
@@ -620,7 +621,7 @@ var GraphLinear = GraphLinear || (function($) {
 				for (var i = 1; i < self.xOfPoints.length; ++i) {
 					E.path += 'L' + self.xOfPoints[i] + ',' + self.yOfPoints[i] + ' '; //draw line to next point
 				}
-				E.path += 'L' + self.xOfPoints[self.xOfPoints.length - 1] + ',' + (hmdist) + ' Z"></path>';
+				E.path += 'L' + self.xOfPoints[self.xOfPoints.length - 1] + ',' + (hmdist) + ' "></path>';
 			}
 		} else { //this looks similar to the above but we're now using multi dimensional array and different vars
 			//we need to push the right # of empty arrays into the multi arrays for points
@@ -654,7 +655,7 @@ var GraphLinear = GraphLinear || (function($) {
 					}
 					paths[i] += '"></path>';
 				} else {
-					//LINES
+					// //LINES
 					for (var t = 0, len2 = self.points[i].length - 1; t < len2; ++t) {
 						j = t + 1; //get next point coordinate
 						//number class name for different colors
@@ -669,7 +670,7 @@ var GraphLinear = GraphLinear || (function($) {
 					for (var t = 0, len2 = self.points[i].length; t < len2; ++t) {
 						paths[i] += 'L' + self.mxOfPoints[i][t] + ',' + self.myOfPoints[i][t] + ' ';
 					}
-					paths[i] += 'L' + self.mxOfPoints[i][self.mxOfPoints[i].length - 1] + ',' + (hmdist) + ' Z"></path>';
+					paths[i] += 'L' + self.mxOfPoints[i][self.mxOfPoints[i].length - 1] + ',' + (hmdist) + '"></path>';
 				}
 			}
 			//if (area) {
@@ -677,7 +678,7 @@ var GraphLinear = GraphLinear || (function($) {
 			//}
 		}
 		this.finishGraph(xLines, yLines, E, thing); //close tags, style, and append
-		if (!area) this.animateLines();
+		if (!(self.multipleDataSets && area) && self.animations && self.lineAnimation) this.animateLines();
 	};
 	return GraphLinear;
 })(jQuery);
@@ -739,7 +740,7 @@ var GraphBar = GraphBar || (function($) {
 				E.rects += '<rect class="rect bar"id="' + self.id + '-point-' + i + '" x="' + x +
 					'" y="' + (-self.height + self.yDist + self.mainOffset + self.padding / 2) +
 					'" width="' + self.xDist + '"height="' + inc + '"' + (self.animations === true ?
-						'><animate attributeName="height" from="0" to="' + inc + '" dur="' + self.barAnimationDuration + 's" fill="freeze"></animate></rect>' : '/>');
+						'><animate attributeName="height" from="0" to="' + inc + '" dur="' + self.animationDuration + 's" fill="freeze"></animate></rect>' : '/>');
 			}
 			for (var i = 0, len = xLines - 1; i < len; ++i) {
 				inc = (self.points[i] !== 0) ? ((self.points[i] + self.scale) * (self.yDist / self.scale)) - self.yDist : 2;
@@ -786,8 +787,8 @@ var GraphBar = GraphBar || (function($) {
 							if (which === 0) {
 								E.rects += '<rect class="rect-of-' + t + ' bar"id="' + self.id + '-point-' + (ref) + '" x="' + x +
 									'" y="' + (-self.height + self.yDist + self.mainOffset + self.padding / 2) +
-									'" width="' + (xDist) + '"height="' + inc + '"' + (self.animations === true ?
-										'><animate attributeName="height" from="0" to="' + inc + '" dur="' + self.barAnimationDuration + 's" fill="freeze"></animate></rect>' : '/>');
+									'" width="' + (xDist) + '"height="' + inc + '"' + (self.animations && self.barAnimation ?
+										'><animate attributeName="height" from="0" to="' + inc + '" dur="' + self.animationDuration + 's" fill="freeze"></animate></rect>' : '/>');
 							} else if (which === 1) { //tooltips
 								//tooltip box
 								E.tooltips += '<g><rect class="rect-of-' + t + ' SVG-tooltip-box "id="' + self.id + '-point-' +
@@ -838,7 +839,7 @@ var GraphBar = GraphBar || (function($) {
 			}
 		}
 		this.finishGraph(xLines, yLines, E, thing);
-		ln.animateLines();
+		if (self.special === 'combo' && self.multipleDataSets && self.animations) ln.animateLines();
 	};
 	return GraphBar;
 })(jQuery);
@@ -928,12 +929,13 @@ var GraphPie = GraphPie || (function($) {
 			var howMuchOfPieInRadians;
 			var howMuchUp;
 			var howMuchLeft;
+			var firstD;
 			self.dataNames = self.x.slice(0);
 			var tooltipCenter = center - center / 4;
-			if (self.shadow && self.special !== 'donut') {
-				E.pie += '<defs><filter id="dropshadow" width="120%" height="120%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
-					'<circle cx="' + (center + 5) + '" cy="' + (center + 5) + '" r="' + radius + '"style="fill: black; fill-opacity:0.6; stroke:none;filter:url(#dropshadow)"/>';
-			}
+			// if (self.shadow && self.special !== 'donut') {
+			// 	E.pie += '<defs><filter id="dropshadow" width="120%" height="120%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
+			// 		'<circle cx="' + (center + 5) + '" cy="' + (center + 5) + '" r="' + radius + '"style="fill: black; fill-opacity:0.6; stroke:none;filter:url(#dropshadow)"/>';
+			// }
 			for (var i = 0, len = self.numPoints; i < len; ++i) {
 				max += self.points[i];
 			}
@@ -945,27 +947,33 @@ var GraphPie = GraphPie || (function($) {
 				howMuchLeft = Math.cos(howMuchOfPieInRadians);
 				HORZ = center - (radius * howMuchLeft); //x component of line
 				VERT = center - (radius * howMuchUp); //y component of line
+				if(i === 0) firstD = CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT;
 				//path
 				E.pie += '<path title="' + self.points[i] + ' (' + Private.percent(self.points[i] / max) +
 					')"id="' + self.id + '-point-' + i + '"class="path-of-' + i +
-					' slice" d="' + CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT + 'Z"/>';
+					' slice" d="' + CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT + 'Z">';
+				// if(self.animations && self.pieAnimation){
+				// 	E.pie += '<animate attributeName="d" from="M200,200" to="' + CENTER + LINETO + ARC + ' ' + STD + HORZ + ',' + VERT + 'Z" dur="' + (self.animationDuration + i/2) + 's" fill="freeze">'
+				// 	E.pie += '<animate attributeName="opacity" from="0" to="0" dur="' + (self.animationDuration) + 's" fill="freeze">'
+				// }
+				E.pie += '</path>';
 			}
 			//tooltip box
 			E.tooltips += '<g><circle class="pie-tooltip"id="' + self.id + '-point-' +
-				(i) + '-tooltip-rect"style="fill:' + (self.pieTooltipFill || '#fff') + ';opacity:' + (self.pieTooltipOpacity || 0.5) + '"r="' + (self.pieTooltipRadius || 60) + '"cx="' + center + '"cy="' + center +
-				'"height="' + (self.donutCenterRadius || center / 2) + '"width="' + (self.donutCenterRadius || center / 2) + '"/>';
+				(i) + '-tooltip-rect"style="fill:' + (self.design.pieTooltipFill || '#fff') + ';opacity:' + (self.design.pieTooltipOpacity || 0.5) + '"r="' + (self.design.pieTooltipRadius || 60) + '"cx="' + center + '"cy="' + center +
+				'"height="' + (self.design.donutCenterRadius || center / 2) + '"width="' + (self.design.donutCenterRadius || center / 2) + '"/>';
 			//tooltips have their own loop for good old SVG z-index reasons
 			for (var i = 0; i < len; ++i) {
 				//tooltip text
 				E.tooltips += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (i) +
-					'-tooltip" x="' + (tooltipCenter + sizing / 2) + '" y="' +
+					'-tooltip" x="' + (self.design.pieTooltipTextX || tooltipCenter + 10) + '" y="' +
 					(tooltipCenter + center / 4 + sizing) + '">' + self.points[i] + ' (' + Private.percent(self.points[i] / max) + ')</text>';
-				E.tooltips += '<text class="SVG-tooltip-title"style="display:none;font-weight:bold;font-size:30px;"id="' + self.id + '-point-' + (i) +
-					'-tooltip-title" x="' + (tooltipCenter + sizing) + '" y="' +
+				E.tooltips += '<text class="SVG-tooltip-title"style="display:none;font-weight:bold;font-size:25px;"id="' + self.id + '-point-' + (i) +
+					'-tooltip-title" x="' + (self.design.pieTooltipTitleX || tooltipCenter + 20) + '" y="' +
 					(tooltipCenter + center / 8) + '">' + self.dataNames[i] + '</text></g>';
 			}
 			if (self.special === 'donut') //just stick some color circle in the middle :P
-				E.middle = '<g><circle class="middle"cx="' + center + '" cy="' + center + '" r="' + (self.donutCenterRadius || center / 2) + '"/>';
+				E.middle = '<g><circle class="middle"cx="' + center + '" cy="' + center + '" r="' + (self.design.donutCenterRadius || center / 2) + '"/>';
 			//add percentages to names for legend by modifying the names taken by legend func
 			if (self.dataNames) {
 				for (var i = 0, len = self.dataNames.length; i < len; ++i) {
