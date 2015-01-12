@@ -931,7 +931,6 @@ var GraphPie = GraphPie || (function($) {
 			var howMuchLeft;
 			var firstD;
 			self.dataNames = self.x.slice(0);
-			var tooltipCenter = center - center / 4;
 			// if (self.shadow && self.special !== 'donut') {
 			// 	E.pie += '<defs><filter id="dropshadow" width="120%" height="120%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
 			// 		'<circle cx="' + (center + 5) + '" cy="' + (center + 5) + '" r="' + radius + '"style="fill: black; fill-opacity:0.6; stroke:none;filter:url(#dropshadow)"/>';
@@ -963,13 +962,19 @@ var GraphPie = GraphPie || (function($) {
 				(i) + '-tooltip-rect"style="fill:' + (self.design.pieTooltipFill || '#fff') + ';opacity:' + (self.design.pieTooltipOpacity || 0.5) + '"r="' + (self.design.pieTooltipRadius || 60) + '"cx="' + center + '"cy="' + center +
 				'"height="' + (self.design.donutCenterRadius || center / 2) + '"width="' + (self.design.donutCenterRadius || center / 2) + '"/>';
 			//tooltips have their own loop for good old SVG z-index reasons
+            var tooltipCenter = center - center / 4;
+            var tooltipText = '';
 			for (var i = 0; i < len; ++i) {
+                tooltipText = self.points[i] + ' (' + Private.percent(self.points[i] / max) + ')';
 				//tooltip text
+                //to vertically center text we need to know the width of the text to compensate for its offset.
+                //the width of a character in pixels is its font size. So get the length of text and multiple it by its
+                //font size to get the width, and divide as normal
 				E.tooltips += '<text class="SVG-tooltip"id="' + self.id + '-point-' + (i) +
-					'-tooltip" x="' + (self.design.pieTooltipTextX || tooltipCenter + 10) + '" y="' +
-					(tooltipCenter + center / 4 + sizing) + '">' + self.points[i] + ' (' + Private.percent(self.points[i] / max) + ')</text>';
+					'-tooltip" x="' + (self.design.pieTooltipTextX || center - (tooltipText.length * 20 / 4)) + '" y="' +
+					(tooltipCenter + center / 4 + sizing) + '">' + tooltipText + ')</text>';
 				E.tooltips += '<text class="SVG-tooltip-title"style="display:none;font-weight:bold;font-size:25px;"id="' + self.id + '-point-' + (i) +
-					'-tooltip-title" x="' + (self.design.pieTooltipTitleX || tooltipCenter + 20) + '" y="' +
+					'-tooltip-title" x="' + (self.design.pieTooltipTitleX || center - (self.dataNames[i].toString().length * 25 / 4)) + '" y="' +
 					(tooltipCenter + center / 8) + '">' + self.dataNames[i] + '</text></g>';
 			}
 			if (self.special === 'donut') //just stick some color circle in the middle :P

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Graph.js</title>
+</head>
+
+<body>
+    <h1>Graph.js : <a target="_blank"href="https://github.com/uriahsanders/Graph.js">Github</a> | <a href="#docs">Docs</a></h1>
+    <h2>"Lightweight, customizable, SVG graphs + jQuery plugin"</h2>
+    <hr>
+    <h1>Here are some examples:</h1>
+    <h2>Multiple Data-Sets (Yes, animations/interactivity is optional. Actually, so is everything else.)</h2>
+    <div id="graph"></div>
+    <br>
+    <br>
+    <hr>
+    <h2>Single Data-Set (And different options)</h2>
+    <div id="graph2"></div>
+    <br>
+    <br>
+    <hr>
+    <h2>Big example without plugin and different options:</h2>
+    <div id="graph3"></div>
+    <br>
+    <br>
+    <br>
+    <hr>
+    <h1 id="docs">Documentation (someone needs to make this page look pretty but it's not me...):</h1>
+    <div>
+        <h2>Method 1: Using Class -</h2>
+        <code>
+<pre>
+	//(Note: Pie/donut graphs can only be created with one dataset, and combo graphs only with multiple)
+	var bar = new GraphBar({ //options
+		attachTo: '#wrapper',
+		height: 375,
+		width: 775,
+		xDist: 90,
+		legend: true,
+		design: { //css styling
+			gridColor: 'grey',
+			tooltipBoxColor: 'white',
+		}
+	});
+	bar.init(); //actually create it
+</pre>
+		</code>
+        <h2>Method 1: Using jQuery Plugin -</h2>
+        <code>
+<pre>
+	//creates same graph as previous method, but with change buttons
+	$('#wrapper').graphify({
+		start: 'bar', //show bar graph first
+		obj: { //graph options
+			height: 375,
+			width: 775,
+			xDist: 90,
+			legend: true,
+			design: { //css styling
+				gridColor: 'grey',
+				tooltipBoxColor: 'white',
+			}
+		}
+	});
+</pre>
+		</code>
+        <h2>To change graph type with class:</h2>
+        barGraph.to('linear'); //changing the type of a graph
+        <h2>Getting all graph information:</h2>
+        graph.getData();
+        <h2>An update function exists but will change dramatically in like a day so skipping that.</h2>
+        <h2>Graph Options (Note: Anything not specified is defaulted; Some options will be migrated to the design object soon)</h2>
+        <ul style="list-style-type:none">
+            <li><b>id</b>: Give an Id to your graph (SVG tag)</li>
+            <li><b>width, height</b>: Set width and height of the graph.</li>
+            <li><b>grid</b>: (true/false) Show the grid?</li>
+            <li><b>xGrid</b>: (true/false) False will remove vertical grid lines</li>
+            <li><b>yGrid</b>: (true/false) False will remove horizontal grid lines</li>
+            <li><b>legend</b>: (true/false) Do you want to show a legend?</li>
+            <li><b>title</b>: (string) Add title to top...</li>
+            <li><b>points</b>: (array) Muldimensional array for multiple datasets, each array should contain the Y-values of your points/data.</li>
+            <li><b>pointRadius</b>: (number) Radius of your points.</li>
+            <li><b>colors</b>: (array) For multiple datasets and pie/donut graphs, order of colors you would like each line/bar/pie slice to be.</li>
+            <li><b>xDist</b>: (number) Horizontal distance between vertical grid lines (Makes graph wider)</li>
+            <li><b>dataNames</b>: (array) Array of names for each dataset.</li>
+            <li><b>xName</b>: (string) Name of X-Axis</li>
+            <li><b>yName</b>: (string) Name of Y-Axis</li>
+            <li><b>animations</b>: (true/false) Enable animations?</li>
+            <li><b>interactive</b>: (true/false) Enable interactivity?</li>
+            <li><b>pieSize</b>: (number) Size of pie/donut graphs (radius to be exact)</li>
+            <li><b>shadow</b>: (true/false) Wanna stick a shadow under your pie graph?</li>
+            <li><b>scale</b>: (number) Graphs start at 0, but will jump up by the scale. Eg: 0, 10, 20, 30 ...</li>
+            <li><b>x</b>: (array) Array of your x - Axis names.</li>
+            <li><b>showPoints</b>: (true/false) Want the line graphs to have points on them?</li>
+            <li><b>special</b>: (donut/area/combo) donuts are a subset of pie, area of linear, combo of bar. So to use one use its parent and appropriately set special.</li>
+            <li><b>attachTo</b>: (id) Where do you want dat graph to show up?</li>
+            <li><b>animationDuration</b>: (seconds) Time of each animation</li>
+            <li><b>point, bar, and lineAnimation</b>: (true/false) Want em'?</li>
+            <li><b>byCSS</b>: (object) use a css object with your id as a selector to design your graph with CSS</li>
+            <li><b>Design</b>: This object contains all the various styling options, below (well, most are below, sorry :P):</li>
+            <li><b>tooltipColor</b>
+            </li>
+            <li><b>averageLineColor</b>
+            </li>
+            <li><b>pointColor</b>
+            </li>
+            <li><b>lineStrokeColor</b>
+            </li>
+            <li><b>lineColor</b>
+            </li>
+            <li><b>barColor</b>
+            </li>
+            <li><b>areaColor</b>
+            </li>
+            <li><b>tooltipFontSize</b>
+            </li>
+            <li><b>gridColor</b>
+            </li>
+            <li><b>tooltipColor</b>
+            </li>
+            <li><b>tooltipBoxColor</b>
+            </li>
+            <li><b>tooltipWidth</b>
+            </li>
+            <li><b>lineWidth</b>
+            </li>
+            <li><b>barBorder</b>
+            </li>
+            <li><b>label Stroke-Kerning-Font-FontSize-Color</b>
+            </li>
+            <li><b>borderColor</b>
+            </li>
+            <li><b>borderWidth</b>
+            </li>
+            <li><b>xLabelAnchor</b>
+            </li>
+            <li><b>yLabelAnchor</b>
+            </li>
+            <li><b>donutCenterColor</b>
+            </li>
+            <li><b>pieTooltipX</b>
+            </li>
+            <li><b>pieTooltipTitle</b>
+            </li>
+            <li><b>pieTooltipRadius</b>
+            </li>
+            <li><b>pieTooltipOpacity</b>
+            </li>
+            <li><b>donutCenterRadius</b>
+            </li>
+        </ul>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="graph.js"></script>
+    <script>
+        $(function () {
+            $('#graph').graphify({
+                //options: true,
+                start: 'combo',
+                obj: {
+                    id: 'ggg',
+                    width: 775,
+                    height: 375,
+                    xGrid: false,
+                    legend: true,
+                    title: 'Linux vs Mac',
+                    points: [
+      [7, 26, 33, 74, 12, 49, 33],
+      [32, 46, 75, 38, 62, 20, 52]
+     ],
+                    pointRadius: 3,
+                    colors: ['blue', 'red'],
+                    xDist: 90,
+                    dataNames: ['Linux', 'Mac'],
+                    xName: 'Day',
+                    tooltipWidth: 15,
+                    animations: true,
+                    pointAnimation: true,
+                    averagePointRadius: 10,
+                    design: {
+                        tooltipColor: '#fff',
+                        gridColor: 'grey',
+                        tooltipBoxColor: 'green',
+                        averageLineColor: 'green',
+                        pointColor: 'green',
+                        lineStrokeColor: 'grey',
+                    }
+                }
+            });
+            $('#graph2').graphify({
+                start: 'donut',
+                obj: {
+                    id: 'lol',
+                    legend: false,
+                    showPoints: true,
+                    width: 775,
+                    legendX: 450,
+                    pieSize: 200,
+                    shadow: true,
+                    height: 400,
+                    animations: true,
+                    x: [2000, 2001, 2002, 2003, 2004, 2005, 2010],
+                    points: [17, 33, 64, 22, 87, 45, 38],
+                    xDist: 90,
+                    scale: 12,
+                    yDist: 35,
+                    grid: false,
+                    xName: 'Year',
+                    dataNames: ['Amount'],
+                    design: {
+                        lineColor: 'red',
+                        tooltipFontSize: '20px',
+                        pointColor: 'red',
+                        barColor: 'blue',
+                        areaColor: 'orange'
+                    }
+                }
+            });
+            var bar = new GraphBar({
+                attachTo: '#graph3',
+                special: 'combo',
+                height: 725,
+                width: '100%',
+                yDist: 60,
+                xDist: 150,
+                showPoints: false,
+                xGrid: false,
+                legend: true,
+                points: [
+      [17, 21, 51, 74, 12, 49, 33],
+      [32, 15, 75, 20, 45, 90, 52]
+     ],
+                colors: ['red', 'orange'],
+                dataNames: ['Hot', 'Warm'],
+                xName: 'Day',
+                tooltipWidth: 15,
+                design: {
+                    tooltipColor: '#fff',
+                    gridColor: 'black',
+                    tooltipBoxColor: 'green',
+                    averageLineColor: 'blue',
+                }
+            });
+            bar.init();
+        });
+    </script>
+</body>
+
+</html>
