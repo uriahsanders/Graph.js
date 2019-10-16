@@ -1,4 +1,4 @@
-Graph.js (Very Old and no longer maintained)
+Graph.js (Old and no longer maintained)
 ========
 
 Lightweight, customizable, SVG graphs + jQuery plugin
